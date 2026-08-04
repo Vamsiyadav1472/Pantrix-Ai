@@ -1,0 +1,17 @@
+{
+  "name": "pantrix-appium-tests",
+  "version": "1.0.0",
+  "description": "Appium Mobile End-to-End Test Suite for Pantrix AI Mobile Application",
+  "main": "tests/appium-tests.js",
+  "scripts": {
+    "test": "mocha tests/**/*.js --timeout 120000",
+    "generate-report": "node generate-excel-report.js"
+  },
+  "dependencies": {
+    "webdriverio": "^8.38.0",
+    "appium": "^2.11.0",
+    "mocha": "^10.4.0",
+    "chai": "^4.3.10",
+    "xlsx": "^0.18.5"
+  }
+}

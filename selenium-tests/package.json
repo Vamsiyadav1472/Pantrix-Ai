@@ -1,0 +1,17 @@
+{
+  "name": "pantrix-selenium-tests",
+  "version": "1.0.0",
+  "description": "Selenium Web End-to-End Test Suite for Pantrix AI Web Frontend",
+  "main": "tests/login-tests.js",
+  "scripts": {
+    "test": "mocha tests/**/*.js --timeout 60000",
+    "generate-report": "node generate-excel-report.js"
+  },
+  "dependencies": {
+    "selenium-webdriver": "^4.21.0",
+    "chromedriver": "^125.0.0",
+    "mocha": "^10.4.0",
+    "chai": "^4.3.10",
+    "xlsx": "^0.18.5"
+  }
+}
