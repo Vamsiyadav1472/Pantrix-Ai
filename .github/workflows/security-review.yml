@@ -91,14 +91,7 @@ jobs:
       - name: Execute Baseline Load Test Simulation (100 VUs / 1 min)
         run: |
           echo "Simulating 100 virtual users for 1 minute baseline load test..."
-          locust -f - --headless -u 100 -r 10 --run-time 1m --host http://localhost:8000 << 'EOF'
-          from locust import HttpUser, task, between
-          class APIUser(HttpUser):
-              wait_time = between(0.1, 0.5)
-              @task
-              def check_health(self):
-                  self.client.get("/health")
-          EOF || true
+          locust -f locustfile.py --headless -u 100 -r 10 --run-time 1m --host http://localhost:8000 || true
 
   verify_critical_failures:
     name: Fail Workflow on Critical Findings Only
