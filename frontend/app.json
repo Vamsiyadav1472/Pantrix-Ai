@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "PantrixAI",
+    "slug": "pantrix-ai",
+    "scheme": "pantrixai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.pantrixai.app",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE"
+      ]
+    },
+    "ios": {
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow PantrixAI to access your camera to scan barcodes.",
+        "NSSpeechRecognitionUsageDescription": "Allow PantrixAI to use speech recognition to convert your voice to text.",
+        "NSMicrophoneUsageDescription": "Allow PantrixAI to access your microphone to record voice for recipe search."
+      }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow PantrixAI to access your camera to scan barcodes."
+        }
+      ],
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "color": "#4CAF50",
+          "androidCollapsedTitle": "PantrixAI Alerts",
+          "iosDisplayInForeground": true
+        }
+      ],
+      "expo-font",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow PantrixAI to access your microphone for voice recipe search.",
+          "speechRecognitionPermission": "Allow PantrixAI to recognize your speech to find recipes."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d12b662b-ad4d-409f-a4d3-83e21d4826e1"
+      }
+    },
+    "owner": "vamsi-yadav"
+  }
+}
