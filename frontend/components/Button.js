@@ -62,7 +62,7 @@ const Button = ({
         onPress={onPress}
         disabled={disabled || loading}
         activeOpacity={0.85}
-        style={[styles.gradientWrapper, styles[size], disabled && styles.disabled, style]}
+        style={[styles.gradientWrapper, disabled && styles.disabled, style]}
       >
         <LinearGradient
           colors={gradColors}

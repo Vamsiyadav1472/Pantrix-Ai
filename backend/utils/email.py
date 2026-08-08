@@ -7,6 +7,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def send_email(to_email: str, subject: str, body: str):
+    # Reload .env with override=True
+    dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+    load_dotenv(dotenv_path=dotenv_path, override=True)
+    load_dotenv(override=True)
+
     # Retrieve SMTP settings from .env
     smtp_server = os.getenv("MAIL_SERVER", "smtp.gmail.com")
     smtp_port = int(os.getenv("MAIL_PORT", 587))
@@ -14,8 +19,9 @@ def send_email(to_email: str, subject: str, body: str):
     smtp_password = os.getenv("MAIL_PASSWORD")
     mail_from = os.getenv("MAIL_FROM", smtp_user)
 
-    if not smtp_user or not smtp_password:
-        print("Skipping email send: SMTP credentials not set in .env")
+    if not smtp_user or not smtp_password or "your_email" in smtp_user or "your_app_password" in smtp_password:
+        print(f"⚠️ [SMTP Warning] Default placeholder credentials in backend/.env. Email not sent via SMTP.")
+        print(f"➜ [TEST MODE OTP] Use the DEBUG OTP code logged above in terminal to test in app.")
         return False
 
     try:
@@ -34,6 +40,7 @@ def send_email(to_email: str, subject: str, body: str):
         server.login(smtp_user, smtp_password)
         server.send_message(msg)
         server.quit()
+        print(f"✅ SUCCESS: Email sent to {to_email} via SMTP ({smtp_user})")
         return True
     except Exception as e:
         print(f"CRITICAL: Failed to send email (check .env): {e}")

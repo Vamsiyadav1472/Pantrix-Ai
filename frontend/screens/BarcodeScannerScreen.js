@@ -149,7 +149,7 @@ const BarcodeScannerScreen = ({
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <ChevronLeft size={22} color={Theme.colors.text} />
+            <ChevronLeft size={22} color="#000000" strokeWidth={2.5} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t("BarcodeScannerScreen.AI_Food_Scanner")}</Text>
           <View style={{
@@ -211,21 +211,15 @@ const BarcodeScannerScreen = ({
 
           {/* Analyze Button */}
           <TouchableOpacity style={[styles.analyzeBtnWrapper, (!image || loading) && styles.disabledBtn]} onPress={handleAnalyze} disabled={loading || !image} activeOpacity={0.88}>
-            <LinearGradient colors={Theme.gradients.primary} style={styles.analyzeBtnGrad} start={{
-            x: 0,
-            y: 0
-          }} end={{
-            x: 1,
-            y: 0
-          }}>
+            <View style={styles.analyzeBtnGrad}>
               {loading ? <View style={styles.loadingRow}>
-                  <ActivityIndicator color="#FFF" size="small" />
+                  <ActivityIndicator color="#FFFFFF" size="small" />
                   <Text style={styles.analyzeBtnText}>{t("BarcodeScannerScreen.AI_Analyzing_Food")}</Text>
                 </View> : <>
-                  <Zap size={20} color="#FFF" fill="#FFF" />
+                  <Zap size={20} color="#FFFFFF" fill="#FFFFFF" />
                   <Text style={styles.analyzeBtnText}>{result ? "Re-Analyze Food" : "Analyze Food with AI"}</Text>
                 </>}
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
         </ScrollView>
       </LinearGradient>
@@ -247,13 +241,17 @@ const styles = StyleSheet.create({
     paddingVertical: 14
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'transparent',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#10b981', // Solid vibrant green
     justifyContent: 'center',
     alignItems: 'center',
-    ...Theme.shadows.xs
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   headerTitle: {
     fontSize: 20,
@@ -398,6 +396,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: 56,
     borderRadius: Theme.borderRadius.xl,
+    backgroundColor: '#10b981', // Solid vibrant green
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8
@@ -408,7 +407,7 @@ const styles = StyleSheet.create({
     gap: 10
   },
   analyzeBtnText: {
-    color: '#FFF',
+    color: '#FFFFFF',
     fontSize: 16,
     fontFamily: Theme.typography.fontFamily.bodySemiBold
   },

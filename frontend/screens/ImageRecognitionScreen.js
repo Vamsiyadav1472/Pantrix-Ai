@@ -24,7 +24,7 @@ const ImageRecognitionScreen = ({
       return;
     }
     const pickerResult = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaType?.Images || ['images'],
       allowsEditing: true,
       quality: 0.8
     });

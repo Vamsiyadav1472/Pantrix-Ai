@@ -71,19 +71,17 @@ const ItemDetailScreen = ({
           y: 1
         }}>
             <View style={styles.headerActions}>
-              <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
-                <ChevronLeft size={20} color={Theme.colors.text} />
+              <TouchableOpacity style={styles.headerBtnGreen} onPress={() => navigation.goBack()}>
+                <ChevronLeft size={22} color="#000000" strokeWidth={2.5} />
               </TouchableOpacity>
               <View style={styles.rightActions}>
-                <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('EditItem', {
+                <TouchableOpacity style={styles.headerBtnGreen} onPress={() => navigation.navigate('EditItem', {
                 item
               })}>
-                  <Edit2 size={18} color={Theme.colors.primary} />
+                  <Edit2 size={18} color="#000000" strokeWidth={2.5} />
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.iconButton, {
-                backgroundColor: Theme.colors.dangerLight
-              }]} onPress={handleDelete}>
-                  <Trash2 size={18} color={Theme.colors.danger} />
+                <TouchableOpacity style={styles.headerBtnRed} onPress={handleDelete}>
+                  <Trash2 size={18} color="#000000" strokeWidth={2.5} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -167,7 +165,7 @@ const ItemDetailScreen = ({
                 {[{
                 label: 'Calories',
                 val: '120 kcal',
-                color: Theme.colors.text
+                color: '#000000'
               }, {
                 label: 'Protein',
                 val: '8g',
@@ -210,7 +208,7 @@ const ItemDetailScreen = ({
         {/* Footer */}
         <View style={styles.footer}>
           <TouchableOpacity style={styles.shoppingBtn} onPress={() => navigation.navigate('Grocery')} activeOpacity={0.88}>
-            <ShoppingBag size={18} color={Theme.colors.primary} />
+            <ShoppingBag size={18} color="#000000" />
             <Text style={styles.shoppingBtnText}>{t("ItemDetailScreen.Add_to_Grocery_List")}</Text>
           </TouchableOpacity>
         </View>
@@ -257,14 +255,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+  headerBtnGreen: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#10b981',
     justifyContent: 'center',
     alignItems: 'center',
-    ...Theme.shadows.xs
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerBtnRed: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#ef4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#ef4444',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   emojiContainer: {
     width: 100,
@@ -340,7 +355,7 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 13,
-    color: Theme.colors.text,
+    color: '#000000',
     fontFamily: Theme.typography.fontFamily.bodySemiBold
   },
   section: {
@@ -395,7 +410,7 @@ const styles = StyleSheet.create({
   },
   nutLabel: {
     fontSize: 11,
-    color: Theme.colors.textMuted,
+    color: '#4B5563',
     marginTop: 2,
     fontFamily: Theme.typography.fontFamily.bodySemiBold,
     textTransform: 'uppercase'
@@ -426,7 +441,7 @@ const styles = StyleSheet.create({
   },
   recipeLinkText: {
     fontSize: 14,
-    color: Theme.colors.text,
+    color: '#000000',
     fontFamily: Theme.typography.fontFamily.bodySemiBold
   },
   footer: {
@@ -446,14 +461,17 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: Theme.borderRadius.xl,
-    backgroundColor: Theme.colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Theme.colors.primary
+    backgroundColor: '#10b981', // Vibrant green
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   shoppingBtnText: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: Theme.typography.fontFamily.bodySemiBold,
-    color: Theme.colors.primaryDark
+    color: '#000000'
   }
 });
 export default ItemDetailScreen;

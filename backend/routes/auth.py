@@ -31,9 +31,12 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     
     # Send actual email
     from utils.email import send_verification_code
-    send_verification_code(user.email, otp)
+    email_sent = send_verification_code(user.email, otp, reason="signup")
     
-    return {"message": "OTP sent successfully", "email": user.email, "status": "pending_verification"}
+    response_data = {"message": "OTP sent successfully", "email": user.email, "status": "pending_verification"}
+    if not email_sent:
+        response_data["debug_note"] = "SMTP credentials missing or invalid in .env. Check backend terminal for OTP."
+    return response_data
 
 @router.post("/verify-otp")
 def verify_otp(data: schemas.VerifyOTPData, db: Session = Depends(get_db)):

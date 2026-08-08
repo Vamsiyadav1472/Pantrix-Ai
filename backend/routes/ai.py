@@ -7,8 +7,11 @@ import json
 import crud
 import schemas
 
-router = APIRouter()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+router = APIRouter(prefix="", tags=["AI"])
+
+def get_ai_client():
+    key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "AIzaSyDummyKeyForInitialization"
+    return genai.Client(api_key=key)
 
 from pydantic import BaseModel
 from typing import List, Optional
@@ -23,8 +26,9 @@ class ChatRequest(BaseModel):
 @router.post("/chat")
 def chat_assistant(data: ChatRequest):
     try:
+        client = get_ai_client()
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3.5-flash",
             contents=f"You are a helpful Pantrix AI kitchen assistant. Keep it short. User says: {data.message}"
         )
         return {"answer": response.text.strip()}
@@ -64,8 +68,9 @@ CRITICAL: DO NOT hallucinate. Include highly accurate, realistic nutritional val
 Return ONLY a strictly formatted JSON object: {{"name":"Exact Name","description":"Brief engaging desc","prep_time":10,"cook_time":15,"servings":2,"calories":350,"protein":25,"carbs":30,"fat":15,"difficulty":"Easy","ingredients":"1. Item\\n2. Item","steps":"1. Step\\n2. Step","tags":"Healthy"}}'''
 
         try:
+            client = get_ai_client()
             response = client.models.generate_content(
-                model="gemini-2.0-flash",
+                model="gemini-3.5-flash",
                 contents=prompt
             )
             text = response.text.strip().replace("```json", "").replace("```", "").strip()
@@ -115,7 +120,7 @@ Return ONLY a strictly formatted JSON object: {{"name":"Exact Name","description
             "result_type": "recipe",
             "prompt": prompt if status_msg == "success" else "fallback_used",
             "result_data": recipe_data,
-            "model_used": "gemini-2.0-flash",
+            "model_used": "gemini-3.5-flash",
             "tokens_used": 0,
             "processing_ms": 0
         })

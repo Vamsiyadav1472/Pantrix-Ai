@@ -7,7 +7,7 @@ import {
   Home,
   Package,
   UtensilsCrossed,
-  ShoppingBasket,
+  CalendarDays,
   CircleUserRound,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -158,8 +158,8 @@ function MainTabs() {
           if (route.name === 'Recipes') {
             return <UtensilsCrossed color={color} size={iconSize} strokeWidth={strokeW} />;
           }
-          if (route.name === 'Grocery') {
-            return <ShoppingBasket color={color} size={iconSize} strokeWidth={strokeW} />;
+          if (route.name === 'Planner') {
+            return <CalendarDays color={color} size={iconSize} strokeWidth={strokeW} />;
           }
           if (route.name === 'Profile') {
             return <CircleUserRound color={color} size={iconSize} strokeWidth={strokeW} />;
@@ -171,7 +171,7 @@ function MainTabs() {
       <Tab.Screen name="Dashboard" component={HomeDashboardScreen} options={{ tabBarLabel: t('BottomNav.Home', 'Home') }} />
       <Tab.Screen name="Pantry" component={PantryListScreen} options={{ tabBarLabel: t('BottomNav.Pantry', 'Pantry') }} />
       <Tab.Screen name="Recipes" component={RecipeRecommendationScreen} options={{ tabBarLabel: t('BottomNav.Recipes', 'Recipes') }} />
-      <Tab.Screen name="Grocery" component={GroceryListScreen} options={{ tabBarLabel: t('BottomNav.Grocery', 'Grocery') }} />
+      <Tab.Screen name="Planner" component={MealPlannerScreen} options={{ tabBarLabel: t('BottomNav.Planner', t('BottomNav.MealPlan', 'Planner')) }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: t('BottomNav.Profile', 'Profile') }} />
     </Tab.Navigator>
   );
@@ -247,6 +247,8 @@ export default function App() {
           <Stack.Screen name="CalendarView" component={CalendarViewScreen} />
 
           {/* Grocery Screens */}
+          <Stack.Screen name="Grocery" component={GroceryListScreen} />
+          <Stack.Screen name="GroceryList" component={GroceryListScreen} />
           <Stack.Screen name="AddGroceryItem" component={AddGroceryItemScreen} />
           <Stack.Screen name="SmartSuggestions" component={SmartSuggestionsScreen} />
           <Stack.Screen name="ShoppingHistory" component={ShoppingHistoryScreen} />

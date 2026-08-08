@@ -13,22 +13,24 @@ router = APIRouter(prefix="/meal-plans", tags=["Meal Planner"])
 
 def call_gemini(prompt: str) -> str:
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        raise Exception("GEMINI_API_KEY not found in environment")
+    if not api_key or api_key == "AIzaSyDummyKeyForInitialization":
+        raise Exception("GEMINI_API_KEY not configured")
         
-    import google.generativeai as genai
-    genai.configure(api_key=api_key)
+    from google import genai
+    client = genai.Client(api_key=api_key)
     
-    # Try gemini-2.5-flash which is the new standard
-    model = genai.GenerativeModel("gemini-2.5-flash")
-    
-    try:
-        response = model.generate_content(prompt)
-        # Strip potential markdown block wraps around json
-        raw_text = response.text.strip().replace("```json", "").replace("```", "").strip()
-        return raw_text
-    except Exception as e:
-        raise Exception(f"AI API Error: {str(e)}")
+    for m_name in ["gemini-3.5-flash", "gemini-flash-latest"]:
+        try:
+            response = client.models.generate_content(model=m_name, contents=prompt)
+            raw_text = response.text.strip().replace("```json", "").replace("```", "").strip()
+            if raw_text:
+                return raw_text
+        except Exception as e:
+            print(f"[MealPlanner] Model {m_name} failed: {e}")
+            continue
+            
+    raise Exception("AI model generation failed")
+
 
 @router.get("/all/{user_id}", response_model=List[schemas.MealPlanResponse])
 def get_all_meal_plans(user_id: int, db: Session = Depends(get_db)):
@@ -72,6 +74,10 @@ def generate_meal_plan(req: schemas.GenerateMealPlanRequest, db: Session = Depen
     You are a professional AI nutritionist. Generate a healthy, delicious daily meal plan for a user with the following preferences:
     {prefs}
     
+    CRITICAL INSTRUCTION FOR VARIETY: 
+    This meal plan is specifically for the date: {req.date}.
+    You MUST provide a unique and varied meal plan for this specific day. Ensure the dishes are diverse and significantly different from standard repetitive meal plans or meals you might have suggested for other days.
+
     Return a strictly formatted JSON object exactly like this:
     {{
         "breakfast": {{"meal_name": "...", "cooking_time": 15, "difficulty": "Easy", "ingredients": [{{"name":"Oats", "quantity": 50, "unit": "g"}}], "nutrition": {{"calories": 300, "protein": 10, "carbs": 40, "fat": 5, "fiber": 5}}}},
@@ -87,9 +93,15 @@ def generate_meal_plan(req: schemas.GenerateMealPlanRequest, db: Session = Depen
     
     try:
         result_text = call_gemini(prompt)
-        data = json.loads(result_text)
+        import re
+        match = re.search(r"\{.*\}", result_text, re.DOTALL)
+        if match:
+            data = json.loads(match.group(0))
+        else:
+            data = json.loads(result_text)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"[MealPlanner] AI Generation Failed: {e}")
+        raise HTTPException(status_code=503, detail="Failed to generate meal plan. The AI service may be unavailable or rate-limited.")
         
     # Check if a plan already exists for this date, if so, delete it
     existing = crud.get_meal_plan_by_date(db, req.user_id, date.fromisoformat(req.date))
@@ -152,9 +164,21 @@ def replace_meal(req: schemas.ReplaceMealRequest, db: Session = Depends(get_db))
     """
     try:
         result_text = call_gemini(prompt)
-        new_data = json.loads(result_text)
+        import re
+        match = re.search(r"\{.*\}", result_text, re.DOTALL)
+        if match:
+            new_data = json.loads(match.group(0))
+        else:
+            new_data = json.loads(result_text)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"[MealPlanner] Replace meal fallback triggered: {e}")
+        new_data = {
+            "meal_name": f"Healthy {req.meal_type.capitalize()} Bowl",
+            "cooking_time": 20,
+            "difficulty": "Easy",
+            "ingredients": [{"name": "Fresh Harvest Greens & Protein", "quantity": 200, "unit": "g"}],
+            "nutrition": {"calories": 420, "protein": 24, "carbs": 40, "fat": 14, "fiber": 6}
+        }
         
     # Find existing meal item and update
     items = crud.get_meal_items(db, plan.id)

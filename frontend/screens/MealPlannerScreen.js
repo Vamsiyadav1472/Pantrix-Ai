@@ -5,7 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '../theme';
 import { mealPlanService, settingsService } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Calendar as CalendarIcon, ChevronRight, Clock, Utensils, Sparkles, RefreshCw, CheckCircle2, Circle, Flame, Droplets, Wheat, X, Settings as SettingsIcon } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Calendar as CalendarIcon, ChevronRight, Clock, Utensils, Sparkles, RefreshCw, CheckCircle2, Circle, Flame, Droplets, Wheat, X, Settings as SettingsIcon, Target, Globe, Ban, Sliders, Check } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 const MealPlannerScreen = ({
@@ -199,7 +200,17 @@ const MealPlannerScreen = ({
     }
   };
   
-  const renderMacro = (icon, label, value, color) => (
+  const getMealColors = (type) => {
+    switch ((type || '').toLowerCase()) {
+      case 'breakfast': return { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)', icon: '#f59e0b' }; 
+      case 'lunch': return { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)', icon: '#10b981' };
+      case 'snack': return { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.3)', icon: '#a855f7' };
+      case 'dinner': return { bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)', icon: '#3b82f6' };
+      default: return { bg: 'rgba(30, 41, 59, 0.75)', border: 'rgba(255, 255, 255, 0.12)', icon: '#ffffff' };
+    }
+  };
+  
+  const renderMacro = (icon, label, value) => (
     <View style={styles.macroBox}>
       {icon}
       <Text style={styles.macroValue}>{value}{t("MealPlannerScreen.g")}</Text>
@@ -209,28 +220,33 @@ const MealPlannerScreen = ({
   
   const renderMealCard = type => {
     const item = mealItems.find(m => m.meal_type.toLowerCase() === type.toLowerCase());
+    const colors = getMealColors(type);
+    
     return (
       <View key={type} style={styles.mealSection}>
         <View style={styles.mealHeader}>
-          <Text style={styles.mealTypeLabel}>{type}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 8, height: 24, backgroundColor: colors.icon, borderRadius: 4 }} />
+            <Text style={styles.mealTypeLabel}>{type}</Text>
+          </View>
           {item && (
-            <TouchableOpacity onPress={() => handleReplace(type)} style={styles.replaceBtn}>
-              <RefreshCw size={14} color="#000000" />
-              <Text style={styles.replaceBtnText}>{t("MealPlannerScreen.Replace_AI")}</Text>
+            <TouchableOpacity onPress={() => handleReplace(type)} style={[styles.replaceBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+              <RefreshCw size={14} color={colors.icon} />
+              <Text style={[styles.replaceBtnText, { color: colors.icon }]}>{t("MealPlannerScreen.Replace_AI")}</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {item ? (
-          <TouchableOpacity style={[styles.mealCard, item.completed && styles.mealCardCompleted]} onPress={() => setSelectedItem(item)} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.mealCard, { backgroundColor: colors.bg, borderColor: colors.border }, item.completed && styles.mealCardCompleted]} onPress={() => setSelectedItem(item)} activeOpacity={0.7}>
             <TouchableOpacity onPress={() => toggleComplete(item)} style={styles.checkBtn}>
-              {item.completed ? <CheckCircle2 size={24} color="#10b981" /> : <Circle size={24} color="#cccccc" />}
+              {item.completed ? <CheckCircle2 size={24} color={colors.icon} /> : <Circle size={24} color={colors.border} />}
             </TouchableOpacity>
             
             <View style={styles.mealInfo}>
-              <Text style={[styles.recipeName, item.completed && styles.textStrike]}>{item.meal_name}</Text>
+              <Text style={[styles.recipeName, item.completed && styles.textStrike, { color: colors.icon }]}>{item.meal_name}</Text>
               <View style={styles.recipeMetaRow}>
-                <Clock size={12} color="#000000" />
+                <Clock size={12} color="#94a3b8" />
                 <Text style={styles.recipeMeta}>{item.cooking_time}{t("MealPlannerScreen.min")}</Text>
                 <Text style={styles.metaDot}>•</Text>
                 <Flame size={12} color="#f97316" />
@@ -238,7 +254,7 @@ const MealPlannerScreen = ({
               </View>
             </View>
             
-            <ChevronRight size={18} color="#000000" />
+            <ChevronRight size={18} color={colors.icon} />
           </TouchableOpacity>
         ) : (
           <View style={styles.emptyMealCard}>
@@ -250,82 +266,108 @@ const MealPlannerScreen = ({
   };
   
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.prefBtn} onPress={() => setPrefsModal(true)}>
-           <SettingsIcon size={32} color="#000000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t("MealPlannerScreen.Meal_Planner")}</Text>
-        <Text style={styles.headerSubtitle}>{t("MealPlannerScreen.AI_personalized_for_you")}</Text>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <LinearGradient 
+        colors={Theme.gradients.background} 
+        style={styles.backgroundGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.glowOrb1} />
+        <View style={styles.glowOrb2} />
 
-      {/* Date Strip */}
-      <View style={styles.dateStrip}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateScroll}>
-          {weekDays.map((day, i) => {
-            const isSelected = selectedDate === day.fullDate;
-            return (
-              <TouchableOpacity key={i} style={[styles.dateChip, isSelected && styles.activeDateChip]} onPress={() => setSelectedDate(day.fullDate)} activeOpacity={0.85}>
-                <Text style={[styles.dateDay, isSelected && styles.activeText]}>{day.dayName}</Text>
-                <Text style={[styles.dateNum, isSelected && styles.activeText]}>{day.dayNum}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerTopRow}>
+            <TouchableOpacity 
+              style={styles.headerIconBtn} 
+              onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Main'))}
+              activeOpacity={0.7}
+            >
+              <X size={20} color="#000000" strokeWidth={2.5} />
+            </TouchableOpacity>
 
-      {loading ? (
-        <View style={styles.centerBox}>
-          <ActivityIndicator size="large" color="#ffffff" />
+            <TouchableOpacity 
+              style={styles.headerIconBtn} 
+              onPress={() => setPrefsModal(true)}
+              activeOpacity={0.7}
+            >
+              <SettingsIcon size={20} color="#000000" strokeWidth={2.5} />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.headerTitle}>{t("MealPlannerScreen.Meal_Planner")}</Text>
+          <Text style={styles.headerSubtitle}>{t("MealPlannerScreen.AI_personalized_for_you")}</Text>
         </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ffffff" />} showsVerticalScrollIndicator={false}>
-          {generating ? (
-            <View style={styles.generatingBox}>
-              <ActivityIndicator size="large" color="#ffffff" />
-              <Text style={styles.generatingTitle}>{t("MealPlannerScreen.AI_is_thinking")}</Text>
-              <Text style={styles.generatingSub}>{t("MealPlannerScreen.Crafting_your_perfect_meal_pla")}</Text>
-            </View>
-          ) : currentPlan ? (
-            <>
-              {/* Macro Summary */}
-              <View style={styles.macroSummaryContainer}>
-                <View style={styles.calorieBox}>
-                  <Text style={styles.calorieValue}>{currentPlan.total_calories || 0}</Text>
-                  <Text style={styles.calorieLabel}>{t("MealPlannerScreen.kcal_total")}</Text>
-                </View>
-                <View style={styles.macrosRow}>
-                  {renderMacro(<Wheat size={16} color="#000000" />, "Carbs", currentPlan.total_carbs || 0)}
-                  {renderMacro(<Droplets size={16} color="#000000" />, "Protein", currentPlan.total_protein || 0)}
-                  {renderMacro(<Flame size={16} color="#000000" />, "Fats", currentPlan.total_fats || 0)}
-                </View>
-              </View>
 
-              {['Breakfast', 'Lunch', 'Snack', 'Dinner'].map(type => renderMealCard(type))}
-            </>
-          ) : (
-            <View style={styles.emptyStateBox}>
-              <View style={styles.aiCircle}>
-                <Sparkles size={32} color="#000000" />
+        {/* Date Strip */}
+        <View style={styles.dateStrip}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateScroll}>
+            {weekDays.map((day, i) => {
+              const isSelected = selectedDate === day.fullDate;
+              return (
+                <TouchableOpacity key={i} style={[styles.dateChip, isSelected && styles.activeDateChip]} onPress={() => setSelectedDate(day.fullDate)} activeOpacity={0.85}>
+                  <Text style={[styles.dateDay, isSelected && styles.activeText]}>{day.dayName}</Text>
+                  <Text style={[styles.dateNum, isSelected && styles.activeText]}>{day.dayNum}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {loading ? (
+          <View style={styles.centerBox}>
+            <ActivityIndicator size="large" color="#10b981" />
+          </View>
+        ) : (
+          <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#10b981" />} showsVerticalScrollIndicator={false}>
+            {generating ? (
+              <View style={styles.generatingBox}>
+                <ActivityIndicator size="large" color="#10b981" />
+                <Text style={styles.generatingTitle}>{t("MealPlannerScreen.AI_is_thinking")}</Text>
+                <Text style={styles.generatingSub}>{t("MealPlannerScreen.Crafting_your_perfect_meal_pla")}</Text>
               </View>
-              <Text style={styles.emptyTitle}>{t("MealPlannerScreen.No_Plan_for_Today")}</Text>
-              <Text style={styles.emptySub}>{t("MealPlannerScreen.Let_AI_craft_a_personalized_me")}</Text>
-              <TouchableOpacity style={styles.generateBtn} onPress={handleGenerate}>
-                <Text style={styles.generateBtnText}>{t("MealPlannerScreen.Generate_AI_Plan")}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </ScrollView>
-      )}
+            ) : currentPlan ? (
+              <>
+                {/* Macro Summary */}
+                <View style={styles.macroSummaryContainer}>
+                  <View style={styles.calorieBox}>
+                    <Text style={styles.calorieValue}>{currentPlan.total_calories || 0}</Text>
+                    <Text style={styles.calorieLabel}>{t("MealPlannerScreen.kcal_total")}</Text>
+                  </View>
+                  <View style={styles.macrosRow}>
+                    {renderMacro(<Wheat size={16} color="#34d399" />, "Carbs", currentPlan.total_carbs || 0)}
+                    {renderMacro(<Droplets size={16} color="#60a5fa" />, "Protein", currentPlan.total_protein || 0)}
+                    {renderMacro(<Flame size={16} color="#f97316" />, "Fats", currentPlan.total_fats || 0)}
+                  </View>
+                </View>
+
+                {['Breakfast', 'Lunch', 'Snack', 'Dinner'].map(type => renderMealCard(type))}
+              </>
+            ) : (
+              <View style={styles.emptyStateBox}>
+                <View style={styles.aiCircle}>
+                  <Sparkles size={36} color="#34d399" />
+                </View>
+                <Text style={styles.emptyTitle}>{t("MealPlannerScreen.No_Plan_for_Today")}</Text>
+                <Text style={styles.emptySub}>{t("MealPlannerScreen.Let_AI_craft_a_personalized_me")}</Text>
+                <TouchableOpacity style={styles.generateBtn} onPress={handleGenerate} activeOpacity={0.85}>
+                  <LinearGradient colors={['#10b981', '#059669']} style={styles.generateBtnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                    <Sparkles size={18} color="#ffffff" />
+                    <Text style={styles.generateBtnText}>{t("MealPlannerScreen.Generate_AI_Plan")}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
+        )}
 
       {/* Meal Details Modal */}
       {selectedItem && (
         <Modal animationType="slide" transparent={true} visible={true} onRequestClose={() => setSelectedItem(null)}>
           <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
+            <View style={[styles.modalContent, { borderColor: getMealColors(selectedItem.meal_type).border }]}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{selectedItem.meal_type}</Text>
+                <Text style={[styles.modalTitle, { color: getMealColors(selectedItem.meal_type).icon }]}>{selectedItem.meal_type}</Text>
                 <View style={{ flexDirection: 'row', gap: 16 }}>
                   {!isEditingItem && (
                     <TouchableOpacity onPress={handleEditClick}>
@@ -338,7 +380,7 @@ const MealPlannerScreen = ({
                     setSelectedItem(null);
                     setIsEditingItem(false);
                   }}>
-                    <X size={24} color="#000000" />
+                    <X size={24} color="#ffffff" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -381,9 +423,9 @@ const MealPlannerScreen = ({
                 </ScrollView>
               ) : (
                 <>
-                  <Text style={styles.modalMealName}>{selectedItem.meal_name}</Text>
+                  <Text style={[styles.modalMealName, { color: getMealColors(selectedItem.meal_type).icon }]}>{selectedItem.meal_name}</Text>
                   
-                  <View style={styles.modalMacroRow}>
+                  <View style={[styles.modalMacroRow, { backgroundColor: getMealColors(selectedItem.meal_type).bg, borderColor: getMealColors(selectedItem.meal_type).border }]}>
                     <Text style={styles.modalMacroText}>{selectedItem.nutrition?.calories || 0}{t("MealPlannerScreen.kcal")}</Text>
                     <Text style={styles.metaDot}>•</Text>
                     <Text style={styles.modalMacroText}>{selectedItem.nutrition?.protein || 0}{t("MealPlannerScreen.g_Pro")}</Text>
@@ -413,431 +455,717 @@ const MealPlannerScreen = ({
       {prefsModal && (
         <Modal animationType="slide" transparent={true} visible={true} onRequestClose={() => setPrefsModal(false)}>
           <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{t("MealPlannerScreen.AI_Meal_Preferences")}</Text>
-                <TouchableOpacity onPress={() => setPrefsModal(false)}>
-                  <X size={24} color="#000000" />
-                </TouchableOpacity>
-              </View>
+            <View style={styles.colorfulModalContent}>
+              {/* Header */}
+              <LinearGradient colors={['#059669', '#10b981']} style={styles.modalHeroHeader} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                <View style={styles.modalHeaderTop}>
+                  <View style={styles.modalHeaderBadge}>
+                    <Sparkles size={16} color="#fef08a" />
+                    <Text style={styles.modalHeaderBadgeText}>AI Settings</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setPrefsModal(false)} style={styles.closeBtnCircle} activeOpacity={0.8}>
+                    <X size={18} color="#ffffff" />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.modalHeroTitle}>{t("MealPlannerScreen.AI_Meal_Preferences", "AI Meal Preferences")}</Text>
+                <Text style={styles.modalHeroSubtitle}>Customize your health goals & food choices</Text>
+              </LinearGradient>
               
-              <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
-                <Text style={styles.inputLabel}>{t("MealPlannerScreen.Health_Goal_e_g_Weight_Loss")}</Text>
-                <View style={styles.inputBox}>
-                  <TextInput value={prefsForm.health_goal} onChangeText={t => setPrefsForm({ ...prefsForm, health_goal: t })} style={styles.inputText} placeholder={t("MealPlannerScreen.placeholder_Weight_Loss")} placeholderTextColor="#999" />
+              <ScrollView style={styles.prefsScroll} showsVerticalScrollIndicator={false}>
+                {/* Health Goal */}
+                <View style={[styles.prefCard, { borderColor: '#10b981', backgroundColor: '#f0fdf4' }]}>
+                  <View style={styles.prefCardHeader}>
+                    <View style={[styles.prefIconBox, { backgroundColor: '#dcfce7' }]}>
+                      <Target size={18} color="#059669" />
+                    </View>
+                    <Text style={[styles.prefLabel, { color: '#065f46' }]}>{t("MealPlannerScreen.Health_Goal_e_g_Weight_Loss", "Health Goal")}</Text>
+                  </View>
+                  <TextInput 
+                    value={prefsForm.health_goal} 
+                    onChangeText={t => setPrefsForm({ ...prefsForm, health_goal: t })} 
+                    style={[styles.prefInput, { color: '#064e3b', borderColor: '#a7f3d0' }]} 
+                    placeholder={t("MealPlannerScreen.placeholder_Weight_Loss", "e.g. Weight Loss")} 
+                    placeholderTextColor="#6ee7b7" 
+                  />
+                  <View style={styles.chipsRow}>
+                    {['Weight Loss 🏋️', 'Muscle Gain 💪', 'Keto 🥑', 'Balanced 🥗'].map((chip, idx) => (
+                      <TouchableOpacity 
+                        key={idx} 
+                        style={[styles.presetChip, { backgroundColor: '#ffffff', borderColor: '#86efac' }]}
+                        onPress={() => setPrefsForm({ ...prefsForm, health_goal: chip.split(' ')[0] })}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.chipText, { color: '#047857' }]}>{chip}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
                 
-                <Text style={styles.inputLabel}>{t("MealPlannerScreen.Cuisines_comma_separated")}</Text>
-                <View style={styles.inputBox}>
-                  <TextInput value={prefsForm.cuisine_preferences} onChangeText={t => setPrefsForm({ ...prefsForm, cuisine_preferences: t })} style={styles.inputText} placeholder={t("MealPlannerScreen.placeholder_Italian_Mexican_As")} placeholderTextColor="#999" />
+                {/* Cuisines */}
+                <View style={[styles.prefCard, { borderColor: '#f97316', backgroundColor: '#fff7ed' }]}>
+                  <View style={styles.prefCardHeader}>
+                    <View style={[styles.prefIconBox, { backgroundColor: '#ffedd5' }]}>
+                      <Globe size={18} color="#ea580c" />
+                    </View>
+                    <Text style={[styles.prefLabel, { color: '#9a3412' }]}>{t("MealPlannerScreen.Cuisines_comma_separated", "Cuisine Preferences")}</Text>
+                  </View>
+                  <TextInput 
+                    value={prefsForm.cuisine_preferences} 
+                    onChangeText={t => setPrefsForm({ ...prefsForm, cuisine_preferences: t })} 
+                    style={[styles.prefInput, { color: '#7c2d12', borderColor: '#fed7aa' }]} 
+                    placeholder={t("MealPlannerScreen.placeholder_Italian_Mexican_As", "e.g. Italian, Mexican")} 
+                    placeholderTextColor="#fdba74" 
+                  />
+                  <View style={styles.chipsRow}>
+                    {['Italian 🇮🇹', 'Indian 🇮🇳', 'Mexican 🇲🇽', 'Asian 🥢'].map((chip, idx) => (
+                      <TouchableOpacity 
+                        key={idx} 
+                        style={[styles.presetChip, { backgroundColor: '#ffffff', borderColor: '#fdba74' }]}
+                        onPress={() => {
+                          const val = chip.split(' ')[0];
+                          const cur = prefsForm.cuisine_preferences ? prefsForm.cuisine_preferences + ', ' + val : val;
+                          setPrefsForm({ ...prefsForm, cuisine_preferences: cur });
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.chipText, { color: '#c2410c' }]}>+ {chip}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
                 
-                <Text style={styles.inputLabel}>{t("MealPlannerScreen.Disliked_Foods_comma_separate")}</Text>
-                <View style={styles.inputBox}>
-                  <TextInput value={prefsForm.disliked_foods} onChangeText={t => setPrefsForm({ ...prefsForm, disliked_foods: t })} style={styles.inputText} placeholder={t("MealPlannerScreen.placeholder_Mushrooms_Olives")} placeholderTextColor="#999" />
+                {/* Disliked Foods */}
+                <View style={[styles.prefCard, { borderColor: '#f43f5e', backgroundColor: '#fff1f2' }]}>
+                  <View style={styles.prefCardHeader}>
+                    <View style={[styles.prefIconBox, { backgroundColor: '#ffe4e6' }]}>
+                      <Ban size={18} color="#e11d48" />
+                    </View>
+                    <Text style={[styles.prefLabel, { color: '#9f1239' }]}>{t("MealPlannerScreen.Disliked_Foods_comma_separate", "Disliked Foods & Allergies")}</Text>
+                  </View>
+                  <TextInput 
+                    value={prefsForm.disliked_foods} 
+                    onChangeText={t => setPrefsForm({ ...prefsForm, disliked_foods: t })} 
+                    style={[styles.prefInput, { color: '#881337', borderColor: '#fecdd3' }]} 
+                    placeholder={t("MealPlannerScreen.placeholder_Mushrooms_Olives", "e.g. Mushrooms, Olives")} 
+                    placeholderTextColor="#fda4af" 
+                  />
                 </View>
                 
-                <Text style={styles.inputLabel}>{t("MealPlannerScreen.Max_Cooking_Time_per_Meal_min")}</Text>
-                <View style={styles.inputBox}>
-                  <TextInput value={prefsForm.cooking_time_preference} onChangeText={t => setPrefsForm({ ...prefsForm, cooking_time_preference: t })} style={styles.inputText} keyboardType="numeric" placeholder="30" placeholderTextColor="#999" />
+                {/* Max Cooking Time */}
+                <View style={[styles.prefCard, { borderColor: '#3b82f6', backgroundColor: '#eff6ff' }]}>
+                  <View style={styles.prefCardHeader}>
+                    <View style={[styles.prefIconBox, { backgroundColor: '#dbeafe' }]}>
+                      <Clock size={18} color="#2563eb" />
+                    </View>
+                    <Text style={[styles.prefLabel, { color: '#1e40af' }]}>{t("MealPlannerScreen.Max_Cooking_Time_per_Meal_min", "Max Cooking Time (mins)")}</Text>
+                  </View>
+                  <TextInput 
+                    value={prefsForm.cooking_time_preference} 
+                    onChangeText={t => setPrefsForm({ ...prefsForm, cooking_time_preference: t })} 
+                    style={[styles.prefInput, { color: '#1e3a8a', borderColor: '#bfdbfe' }]} 
+                    keyboardType="numeric" 
+                    placeholder="30" 
+                    placeholderTextColor="#93c5fd" 
+                  />
+                  <View style={styles.chipsRow}>
+                    {['15 min ⚡', '30 min ⏱️', '45 min 🍳', '60 min 🍲'].map((chip, idx) => (
+                      <TouchableOpacity 
+                        key={idx} 
+                        style={[styles.presetChip, { backgroundColor: '#ffffff', borderColor: '#93c5fd' }]}
+                        onPress={() => setPrefsForm({ ...prefsForm, cooking_time_preference: chip.split(' ')[0] })}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.chipText, { color: '#1d4ed8' }]}>{chip}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
               </ScrollView>
               
-              <TouchableOpacity style={styles.saveBtn} onPress={savePreferences}>
-                 <Text style={styles.saveBtnText}>{t("MealPlannerScreen.Save_Preferences")}</Text>
-              </TouchableOpacity>
+              <View style={styles.savePrefBtnContainer}>
+                <TouchableOpacity style={styles.savePrefBtn} onPress={savePreferences} activeOpacity={0.88}>
+                  <LinearGradient colors={['#10b981', '#059669']} style={styles.savePrefGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                    <Check size={20} color="#ffffff" strokeWidth={2.5} />
+                    <Text style={styles.savePrefBtnText}>{t("MealPlannerScreen.Save_Preferences", "Save Preferences")}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
       )}
+      </LinearGradient>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#10b981' // Green background
+    backgroundColor: '#0f172a',
+  },
+  backgroundGradient: {
+    flex: 1,
+  },
+  glowOrb1: {
+    position: 'absolute',
+    top: -60,
+    right: -60,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+  },
+  glowOrb2: {
+    position: 'absolute',
+    bottom: 100,
+    left: -60,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(5, 150, 105, 0.12)',
   },
   header: {
-    alignItems: 'center', // Centered header for settings logo
     paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 12,
+  },
+  headerIconBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#10b981', // Solid vibrant green background
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   headerTitle: {
     fontSize: 28,
     fontFamily: Theme.typography.fontFamily.heading,
-    color: '#000000', // Black text
+    color: '#ffffff',
     letterSpacing: -0.5,
-    marginTop: 8
   },
   headerSubtitle: {
     fontSize: 14,
     fontFamily: Theme.typography.fontFamily.body,
-    color: '#000000', // Black text
-    marginTop: 2
-  },
-  prefBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#ffffff', // White circular background for logo to pop on green
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
+    color: '#94a3b8',
+    marginTop: 2,
   },
   dateStrip: {
-    paddingBottom: 20
+    paddingBottom: 16,
   },
   dateScroll: {
     paddingHorizontal: 24,
-    gap: 12
+    gap: 10,
   },
   dateChip: {
     width: 54,
     height: 68,
-    borderRadius: 16,
-    backgroundColor: '#ffffff', // White boxes
+    borderRadius: 18,
+    backgroundColor: 'rgba(30, 41, 59, 0.7)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
   },
   activeDateChip: {
-    backgroundColor: '#000000', // Black active box
+    backgroundColor: '#10b981',
+    borderColor: '#34d399',
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
   },
   dateDay: {
     fontSize: 12,
-    color: '#000000', // Black text
-    fontFamily: Theme.typography.fontFamily.bodySemiBold
+    color: '#94a3b8',
+    fontFamily: Theme.typography.fontFamily.bodySemiBold,
   },
   dateNum: {
     fontSize: 18,
-    color: '#000000', // Black text
+    color: '#ffffff',
     fontFamily: Theme.typography.fontFamily.heading,
-    marginTop: 4
+    marginTop: 4,
   },
   activeText: {
-    color: '#ffffff' // White text when active
+    color: '#ffffff',
   },
   content: {
     paddingHorizontal: 24,
-    paddingBottom: 110
+    paddingBottom: 110,
   },
   centerBox: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   macroSummaryContainer: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff', // White box
-    borderRadius: 20,
-    padding: 20,
+    backgroundColor: 'rgba(30, 41, 59, 0.75)',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    padding: 18,
     marginBottom: 24,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
   },
   calorieBox: {
     flex: 1,
     borderRightWidth: 1,
-    borderRightColor: '#eeeeee',
-    paddingRight: 16
+    borderRightColor: 'rgba(255, 255, 255, 0.1)',
+    paddingRight: 16,
   },
   calorieValue: {
     fontSize: 28,
     fontFamily: Theme.typography.fontFamily.heading,
-    color: '#000000' // Black text
+    color: '#ffffff',
   },
   calorieLabel: {
-    fontSize: 13,
-    color: '#000000', // Black text
-    fontFamily: Theme.typography.fontFamily.body,
-    marginTop: 4
+    fontSize: 12,
+    color: '#34d399',
+    fontFamily: Theme.typography.fontFamily.bodySemiBold,
+    marginTop: 2,
   },
   macrosRow: {
     flex: 2,
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingLeft: 16
+    paddingLeft: 12,
   },
   macroBox: {
-    alignItems: 'center'
+    alignItems: 'center',
   },
   macroValue: {
     fontSize: 14,
     fontFamily: Theme.typography.fontFamily.bodySemiBold,
-    color: '#000000', // Black text
-    marginTop: 6
+    color: '#ffffff',
+    marginTop: 6,
   },
   macroLabel: {
     fontSize: 11,
-    color: '#000000', // Black text
+    color: '#94a3b8',
     fontFamily: Theme.typography.fontFamily.body,
-    marginTop: 2
+    marginTop: 2,
   },
   mealSection: {
-    marginBottom: 20
+    marginBottom: 20,
   },
   mealHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12
+    marginBottom: 10,
   },
   mealTypeLabel: {
     fontSize: 18,
     fontFamily: Theme.typography.fontFamily.heading,
-    color: '#000000' // Black text
+    color: '#ffffff',
   },
   replaceBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#ffffff', // White box
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1
   },
   replaceBtnText: {
     fontSize: 12,
-    color: '#000000', // Black text
-    fontFamily: Theme.typography.fontFamily.bodySemiBold
+    color: '#34d399',
+    fontFamily: Theme.typography.fontFamily.bodySemiBold,
   },
   mealCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff', // White box
+    backgroundColor: 'rgba(30, 41, 59, 0.75)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     padding: 16,
     borderRadius: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
   },
   mealCardCompleted: {
-    opacity: 0.6
+    opacity: 0.55,
   },
   checkBtn: {
-    marginRight: 14
+    marginRight: 14,
   },
   mealInfo: {
-    flex: 1
+    flex: 1,
   },
   recipeName: {
     fontSize: 16,
     fontFamily: Theme.typography.fontFamily.bodySemiBold,
-    color: '#000000', // Black text
-    marginBottom: 4
+    color: '#ffffff',
+    marginBottom: 4,
   },
   textStrike: {
     textDecorationLine: 'line-through',
-    color: '#666666'
+    color: '#94a3b8',
   },
   recipeMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4
+    gap: 4,
   },
   recipeMeta: {
     fontSize: 13,
-    color: '#000000', // Black text
-    fontFamily: Theme.typography.fontFamily.body
+    color: '#94a3b8',
+    fontFamily: Theme.typography.fontFamily.body,
   },
   metaDot: {
     fontSize: 12,
-    color: '#000000', // Black text
-    marginHorizontal: 4
+    color: '#64748b',
+    marginHorizontal: 4,
   },
   emptyMealCard: {
-    padding: 20,
+    padding: 18,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#ffffff',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.5)' // White semi-transparent box
+    backgroundColor: 'rgba(30, 41, 59, 0.3)',
   },
   emptyMealText: {
-    color: '#000000', // Black text
+    color: '#94a3b8',
     fontSize: 14,
-    fontFamily: Theme.typography.fontFamily.body
+    fontFamily: Theme.typography.fontFamily.body,
   },
   generatingBox: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 60
+    paddingTop: 60,
   },
   generatingTitle: {
     fontSize: 18,
     fontFamily: Theme.typography.fontFamily.heading,
-    color: '#000000', // Black text
-    marginTop: 20
+    color: '#ffffff',
+    marginTop: 20,
   },
   generatingSub: {
     fontSize: 14,
     fontFamily: Theme.typography.fontFamily.body,
-    color: '#000000', // Black text
-    marginTop: 8
+    color: '#94a3b8',
+    marginTop: 8,
   },
   emptyStateBox: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 60
+    paddingTop: 50,
   },
   aiCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#ffffff', // White circle
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 5
+    marginBottom: 20,
   },
   emptyTitle: {
     fontSize: 22,
     fontFamily: Theme.typography.fontFamily.heading,
-    color: '#000000', // Black text
-    marginBottom: 12
+    color: '#ffffff',
+    marginBottom: 10,
   },
   emptySub: {
     fontSize: 15,
     fontFamily: Theme.typography.fontFamily.body,
-    color: '#000000', // Black text
+    color: '#94a3b8',
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 20,
-    marginBottom: 32
+    marginBottom: 28,
   },
   generateBtn: {
-    backgroundColor: '#000000', // Black button
+    borderRadius: 30,
+    overflow: 'hidden',
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  generateBtnGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     paddingHorizontal: 28,
     paddingVertical: 16,
     borderRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4
   },
   generateBtnText: {
-    color: '#ffffff', // White text on black button
+    color: '#ffffff',
     fontSize: 16,
-    fontFamily: Theme.typography.fontFamily.bodySemiBold
+    fontFamily: Theme.typography.fontFamily.bodySemiBold,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end'
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFF',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    backgroundColor: '#1e293b',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
     padding: 24,
-    maxHeight: '80%'
+    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16
+    marginBottom: 16,
   },
   modalTitle: {
     fontSize: 14,
-    color: '#000000', // Black text
+    color: '#34d399',
     fontFamily: Theme.typography.fontFamily.heading,
     textTransform: 'uppercase',
-    letterSpacing: 1
+    letterSpacing: 1,
   },
   modalMealName: {
     fontSize: 24,
     fontFamily: Theme.typography.fontFamily.heading,
-    color: '#000000', // Black text
-    marginBottom: 12
+    color: '#ffffff',
+    marginBottom: 12,
   },
   modalMacroRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     padding: 12,
     borderRadius: 12,
-    marginBottom: 24
+    marginBottom: 24,
   },
   modalMacroText: {
     fontSize: 13,
     fontFamily: Theme.typography.fontFamily.bodySemiBold,
-    color: '#000000' // Black text
+    color: '#ffffff',
   },
   sectionTitle: {
     fontSize: 18,
     fontFamily: Theme.typography.fontFamily.heading,
-    color: '#000000', // Black text
-    marginBottom: 16
+    color: '#ffffff',
+    marginBottom: 16,
   },
   ingredientRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12
+    marginBottom: 12,
   },
   ingredientText: {
     fontSize: 15,
     fontFamily: Theme.typography.fontFamily.body,
-    color: '#000000' // Black text
+    color: '#e2e8f0',
   },
   inputLabel: {
     fontSize: 13,
-    color: '#000000', // Black text
+    color: '#34d399',
     fontFamily: Theme.typography.fontFamily.bodySemiBold,
     marginBottom: 6,
-    marginTop: 14
+    marginTop: 14,
   },
   inputBox: {
-    backgroundColor: '#ffffff', // White box
+    backgroundColor: '#0f172a',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#cccccc',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     paddingHorizontal: 14,
-    paddingVertical: 12
+    paddingVertical: 12,
   },
   inputText: {
     fontSize: 15,
-    color: '#000000', // Black text
-    fontFamily: Theme.typography.fontFamily.body
+    color: '#ffffff',
+    fontFamily: Theme.typography.fontFamily.body,
   },
   saveBtn: {
-    backgroundColor: '#000000', // Black button
+    backgroundColor: '#10b981',
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 20
+    marginTop: 20,
   },
   saveBtnText: {
-    color: '#ffffff', // White text
+    color: '#ffffff',
+    fontSize: 16,
+    fontFamily: Theme.typography.fontFamily.bodySemiBold,
+  },
+  colorfulModalContent: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    overflow: 'hidden',
+    maxHeight: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 10
+  },
+  modalHeroHeader: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 20
+  },
+  modalHeaderTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12
+  },
+  modalHeaderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)'
+  },
+  modalHeaderBadgeText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontFamily: Theme.typography.fontFamily.bodySemiBold
+  },
+  closeBtnCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  modalHeroTitle: {
+    fontSize: 22,
+    fontFamily: Theme.typography.fontFamily.heading,
+    color: '#ffffff',
+    letterSpacing: -0.3
+  },
+  modalHeroSubtitle: {
+    fontSize: 13,
+    fontFamily: Theme.typography.fontFamily.body,
+    color: 'rgba(255, 255, 255, 0.85)',
+    marginTop: 2
+  },
+  prefsScroll: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 10,
+    maxHeight: 400
+  },
+  prefCard: {
+    borderRadius: 18,
+    borderWidth: 1.5,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2
+  },
+  prefCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12
+  },
+  prefIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  prefLabel: {
+    fontSize: 14,
+    fontFamily: Theme.typography.fontFamily.bodySemiBold
+  },
+  prefInput: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    fontFamily: Theme.typography.fontFamily.body
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 10
+  },
+  presetChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 1
+  },
+  chipText: {
+    fontSize: 12,
+    fontFamily: Theme.typography.fontFamily.bodySemiBold
+  },
+  savePrefBtnContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#ffffff',
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9'
+  },
+  savePrefBtn: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 4
+  },
+  savePrefGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 8
+  },
+  savePrefBtnText: {
+    color: '#ffffff',
     fontSize: 16,
     fontFamily: Theme.typography.fontFamily.bodySemiBold
   }

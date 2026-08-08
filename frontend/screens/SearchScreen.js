@@ -180,30 +180,30 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     flexDirection: 'row',
-    backgroundColor: Theme.colors.card,
+    backgroundColor: '#000000',
     borderRadius: 18,
     paddingHorizontal: 16,
     alignItems: 'center',
     height: 54,
     gap: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 4
     },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 4
   },
   searchBarFocused: {
-    borderColor: '#059669'
+    borderColor: '#10b981'
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: Theme.colors.text
+    color: '#ffffff'
   },
   clearBtn: {
     width: 24,

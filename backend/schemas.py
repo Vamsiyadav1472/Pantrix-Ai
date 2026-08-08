@@ -103,7 +103,7 @@ class RecipeBase(BaseModel):
     cook_time: Optional[int] = None
     servings: int = 1
     calories: Optional[float] = None
-    difficulty: str = "Medium"
+    difficulty: Optional[str] = "Medium"
     tags: Optional[str] = None
 
 class RecipeCreate(RecipeBase):

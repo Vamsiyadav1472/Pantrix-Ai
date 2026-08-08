@@ -380,18 +380,7 @@ const RecipeRecommendationScreen = ({
               </View>
 
               <View style={styles.aiInputRow}>
-                <TextInput value={aiPrompt} onChangeText={setAiPrompt} placeholder={t("RecipeRecommendationScreen.placeholder_Example_how_to_make")} placeholderTextColor={Theme.colors.textPlaceholder} style={styles.aiInput} multiline />
-                <TouchableOpacity style={[styles.micBtn, isListening && styles.micBtnActive]} onPress={handleMicPress} activeOpacity={0.8}>
-                  <LinearGradient colors={isListening ? [Theme.colors.danger, Theme.colors.dangerDark] : Theme.gradients.primary} style={styles.micGrad} start={{
-                  x: 0,
-                  y: 0
-                }} end={{
-                  x: 1,
-                  y: 1
-                }}>
-                    {isListening ? <MicOff size={20} color="#FFFFFF" /> : <Mic size={20} color="#FFFFFF" />}
-                  </LinearGradient>
-                </TouchableOpacity>
+                <TextInput value={aiPrompt} onChangeText={setAiPrompt} placeholder={t("RecipeRecommendationScreen.placeholder_Example_how_to_make")} placeholderTextColor="#9CA3AF" style={styles.aiInput} multiline />
               </View>
 
               {isListening && <View style={styles.listeningRow}>
@@ -442,14 +431,36 @@ const RecipeRecommendationScreen = ({
               <Text style={styles.emptyTitle}>{t("RecipeRecommendationScreen.No_recipes_yet")}</Text>
               <Text style={styles.emptySubtitle}>{t("RecipeRecommendationScreen.Ask_AI_to_generate_your_first")}</Text>
             </View> : <View style={styles.recipesList}>
-              <Text style={styles.recipesCount}>{recipes.length}{t("RecipeRecommendationScreen.Saved_Recipes")}</Text>
+              <Text style={styles.recipesCount}>{recipes.length} {t("RecipeRecommendationScreen.Saved_Recipes")}</Text>
               {[...recipes].sort((a, b) => {
             const aFav = favorites[a.id] ? 1 : 0;
             const bFav = favorites[b.id] ? 1 : 0;
             return bFav - aFav;
-          }).map((recipe, index) => <TouchableOpacity key={recipe.id || index} style={styles.recipeCard} onPress={() => navigation.navigate('RecipeDetail', {
-            recipe
-          })} activeOpacity={0.88}>
+          }).map((recipe, index) => {
+            let parsedRecipe = { ...recipe };
+            const fieldsToCheck = [parsedRecipe.description, parsedRecipe.making_process, parsedRecipe.steps, parsedRecipe.instructions, parsedRecipe.ingredients];
+            for (const field of fieldsToCheck) {
+              if (typeof field === 'string' && field.trim().startsWith('{')) {
+                try {
+                  const parsed = JSON.parse(field);
+                  if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+                    parsedRecipe = { ...parsedRecipe, ...parsed };
+                    break;
+                  }
+                } catch (e) {}
+              }
+            }
+            
+            const rawTime = parsedRecipe.cooking_time || parsedRecipe.cook_time || parsedRecipe.prep_time;
+            const displayTime = rawTime ? (typeof rawTime === 'number' ? rawTime : parseInt(String(rawTime).replace(/\\D/g, '')) || 30) : ((Number(parsedRecipe.prep_time) || 0) + (Number(parsedRecipe.cook_time) || 0) || 30);
+            
+            const rawCalories = parsedRecipe.nutrition?.calories || parsedRecipe.calories;
+            const displayCalories = rawCalories ? (typeof rawCalories === 'number' ? Math.round(rawCalories) : parseInt(String(rawCalories).replace(/\\D/g, '')) || 'N/A') : 'N/A';
+
+            return (
+              <TouchableOpacity key={recipe.id || index} style={styles.recipeCard} onPress={() => navigation.navigate('RecipeDetail', {
+                recipe
+              })} activeOpacity={0.88}>
                     {/* Left accent */}
                     <LinearGradient colors={recipe.ai_generated === 1 ? Theme.gradients.amber : Theme.gradients.primary} style={styles.recipeAccent} start={{
               x: 0,
@@ -476,11 +487,11 @@ const RecipeRecommendationScreen = ({
                         <View style={styles.metaChip}>
                           <Clock size={12} color={Theme.colors.textMuted} />
                           <Text style={styles.metaText}>
-                            {(Number(recipe.prep_time) || 0) + (Number(recipe.cook_time) || 0)}{t("RecipeRecommendationScreen.m")}</Text>
+                            {displayTime}{t("RecipeRecommendationScreen.m")}</Text>
                         </View>
                         <View style={styles.metaChip}>
                           <Flame size={12} color={Theme.colors.danger} />
-                          <Text style={styles.metaText}>{recipe.calories || 'N/A'}{t("RecipeRecommendationScreen.kcal")}</Text>
+                          <Text style={styles.metaText}>{displayCalories !== 'N/A' ? displayCalories : 'N/A'}{t("RecipeRecommendationScreen.kcal")}</Text>
                         </View>
                       </View>
 
@@ -503,7 +514,8 @@ const RecipeRecommendationScreen = ({
                       </TouchableOpacity>
                       <ChevronRight size={16} color={Theme.colors.textLight} />
                     </View>
-                  </TouchableOpacity>)}
+                  </TouchableOpacity>
+            )})}
             </View>}
         </ScrollView>
       </LinearGradient>
@@ -621,16 +633,16 @@ const styles = StyleSheet.create({
   },
   aiInput: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    backgroundColor: '#000000',
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
     fontFamily: Theme.typography.fontFamily.body,
-    color: Theme.colors.text,
+    color: '#ffffff',
     minHeight: 50,
     borderWidth: 1,
-    borderColor: 'rgba(245,158,11,0.25)'
+    borderColor: 'rgba(255, 255, 255, 0.25)'
   },
   micBtn: {
     borderRadius: 25,
@@ -789,7 +801,7 @@ const styles = StyleSheet.create({
   recipeName: {
     fontFamily: Theme.typography.fontFamily.bodySemiBold,
     fontSize: 16,
-    color: Theme.colors.text
+    color: '#000000'
   },
   recipeMeta: {
     flexDirection: 'row',

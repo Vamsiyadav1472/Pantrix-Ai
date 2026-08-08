@@ -4,10 +4,11 @@ import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platfor
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
+import { User, Mail, Lock, Eye, EyeOff, UserPlus } from 'lucide-react-native';
 import { authService } from '../services/api';
 import Button from '../components/Button';
 import { Theme } from '../theme';
+
 const SignupScreen = ({
   navigation
 }) => {
@@ -17,11 +18,14 @@ const SignupScreen = ({
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [nameFocused, setNameFocused] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passFocused, setPassFocused] = useState(false);
+  const [confirmPassFocused, setConfirmPassFocused] = useState(false);
 
   // Validation functions
   const validateFullName = name => name.trim().length >= 3;
@@ -52,6 +56,10 @@ const SignupScreen = ({
     const strength = getPasswordStrength(password);
     if (strength < 5) {
       Alert.alert("Weak Password", "Password must be at least 8 characters long and include an uppercase letter, lowercase letter, number, and special character.");
+      return;
+    }
+    if (!confirmPassword || password !== confirmPassword) {
+      Alert.alert("Password Error", "Password and Re-enter Password do not match! Please make sure both passwords are the same.");
       return;
     }
     setLoading(true);
@@ -109,11 +117,9 @@ const SignupScreen = ({
           x: 1,
           y: 1
         }}>
-            <View style={styles.heroCircle1} />
-            <View style={styles.heroCircle2} />
             <View style={styles.logoWrap}>
               <View style={styles.logoCircle}>
-                <Text style={styles.logoEmoji}>🌱</Text>
+                <UserPlus size={32} color="#000000" strokeWidth={2} />
               </View>
             </View>
             <Text style={styles.heroTitle}>{t("SignupScreen.Create_Account")}</Text>
@@ -169,6 +175,19 @@ const SignupScreen = ({
               {password.length > 0 && getPasswordStrength(password) < 5 && <Text style={styles.validationText}>{t("SignupScreen.Needs_8_chars_upper_lower")}</Text>}
             </View>
 
+            {/* Re-enter Password */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>{t("SignupScreen.Confirm_Password", "Re-enter Password")}</Text>
+              <View style={[styles.inputWrapper, confirmPassFocused && styles.inputFocused]}>
+                <Lock size={18} color={confirmPassFocused ? Theme.colors.primary : Theme.colors.textLight} />
+                <TextInput placeholder={t("SignupScreen.placeholder_Re_enter_password", "Re-enter your password")} placeholderTextColor={Theme.colors.textPlaceholder} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={!showConfirmPassword} style={styles.input} onFocus={() => setConfirmPassFocused(true)} onBlur={() => setConfirmPassFocused(false)} />
+                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  {showConfirmPassword ? <EyeOff size={18} color={Theme.colors.textLight} /> : <Eye size={18} color={Theme.colors.textLight} />}
+                </TouchableOpacity>
+              </View>
+              {confirmPassword.length > 0 && password !== confirmPassword && <Text style={styles.validationText}>{t("SignupScreen.Passwords_do_not_match", "Passwords do not match")}</Text>}
+            </View>
+
             {/* Signup Button */}
             <Button title={loading ? "Creating Account..." : "Create Account"} onPress={handleSignup} loading={loading} variant="primary" size="lg" style={styles.primaryButton} />
 
@@ -201,62 +220,36 @@ const styles = StyleSheet.create({
     paddingTop: 36,
     paddingBottom: 44,
     paddingHorizontal: 28,
-    alignItems: 'center',
-    overflow: 'hidden',
-    position: 'relative'
-  },
-  heroCircle1: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    top: -50,
-    right: -50
-  },
-  heroCircle2: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    bottom: -30,
-    left: -30
+    alignItems: 'center'
   },
   logoWrap: {
     marginBottom: 14
   },
   logoCircle: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 10
-  },
-  logoEmoji: {
-    fontSize: 36
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4
   },
   heroTitle: {
     fontSize: 28,
     fontFamily: 'Outfit_700Bold',
-    color: Theme.colors.card,
+    color: '#ffffff',
     letterSpacing: -0.3,
     textAlign: 'center'
   },
   heroSubtitle: {
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: 4,
+    color: 'rgba(255, 255, 255, 0.85)',
+    marginTop: 6,
     textAlign: 'center'
   },
   formCard: {

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Animated, RefreshControl, Alert, TextInput, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Animated, RefreshControl, Alert, TextInput, ScrollView, Dimensions, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -12,6 +12,16 @@ const {
   width
 } = Dimensions.get('window');
 const CATEGORIES = ['All', 'Vegetables', 'Fruits', 'Dairy', 'Grains', 'Meat', 'Beverages', 'Other'];
+const CATEGORY_IMAGES = {
+  All: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=150&q=80',
+  Vegetables: 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?w=150&q=80',
+  Fruits: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=150&q=80',
+  Dairy: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?w=150&q=80',
+  Grains: 'https://images.unsplash.com/photo-1574316071802-0d684efa7ea5?w=150&q=80',
+  Meat: 'https://images.unsplash.com/photo-1607623814075-e51df1bd682f?w=150&q=80',
+  Beverages: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=150&q=80',
+  Other: 'https://images.unsplash.com/photo-1584473457406-6240486418e9?w=150&q=80'
+};
 const CATEGORY_EMOJIS = {
   All: '🧺',
   Vegetables: '🥦',
@@ -281,17 +291,6 @@ const PantryListScreen = ({
             <Text style={styles.title}>{t("PantryListScreen.My_Pantry")}</Text>
             <Text style={styles.subtitle}>{items.length}{t("PantryListScreen.items_stored")}</Text>
           </View>
-          <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate('QuickAddItem')}>
-            <LinearGradient colors={Theme.gradients.primary} style={styles.headerBtnGrad} start={{
-            x: 0,
-            y: 0
-          }} end={{
-            x: 1,
-            y: 1
-          }}>
-              <Plus size={22} color="#FFFFFF" strokeWidth={2.5} />
-            </LinearGradient>
-          </TouchableOpacity>
         </View>
 
         {/* Search bar */}
@@ -324,7 +323,6 @@ const PantryListScreen = ({
         {loading && !refreshing ? <View style={styles.skeletonList}>
             {[1, 2, 3, 4].map(i => <SkeletonRow key={i} />)}
           </View> : <FlatList data={filteredItems} renderItem={renderItem} keyExtractor={item => item.id.toString()} contentContainerStyle={styles.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.colors.primary} />} ListEmptyComponent={<View style={styles.emptyContainer}>
-                <Text style={styles.emptyEmoji}>🧺</Text>
                 <Text style={styles.emptyTitle}>
                   {search ? 'No results found' : 'Your pantry is empty'}
                 </Text>
@@ -439,13 +437,16 @@ const styles = StyleSheet.create({
   },
   // Categories
   categoriesContainer: {
-    marginBottom: 14
+    marginBottom: 14,
+    maxHeight: 50, // Added to prevent stretching
   },
   categoriesScroll: {
     paddingHorizontal: 24,
-    gap: 8
+    gap: 8,
+    alignItems: 'center' // Added to prevent stretching
   },
   categoryChip: {
+    height: 40, // Added to prevent stretching
     borderRadius: Theme.borderRadius.pill,
     overflow: 'hidden',
     ...Theme.shadows.xs
@@ -656,8 +657,7 @@ const styles = StyleSheet.create({
     gap: 12
   },
   emptyEmoji: {
-    fontSize: 56,
-    marginBottom: 8
+    display: 'none'
   },
   emptyTitle: {
     fontFamily: Theme.typography.fontFamily.heading,

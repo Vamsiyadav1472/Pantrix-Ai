@@ -3,7 +3,8 @@
     "Home": "Home",
     "Pantry": "Pantry",
     "Recipes": "Recipes",
-    "MealPlan": "Meal Plan"
+    "MealPlan": "Meal Plan",
+    "Planner": "Planner"
   },
   "HomeScreen": {
     "welcome": "Welcome to Pantrix AI! 🥦 Add items to get started.",

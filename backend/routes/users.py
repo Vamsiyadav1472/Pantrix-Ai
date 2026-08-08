@@ -94,9 +94,12 @@ def forgot_password(data: schemas.PasswordReset, db: Session = Depends(get_db)):
     verification_codes[data.email] = code
     
     # Send via SMTP
-    send_verification_code(data.email, code, reason="forgot_password")
+    email_sent = send_verification_code(data.email, code, reason="forgot_password")
     
-    return {"message": "Verification code sent to your email."}
+    response_data = {"message": "Verification code sent to your email."}
+    if not email_sent:
+        response_data["debug_note"] = "SMTP credentials missing or invalid in .env. Check backend terminal for OTP."
+    return response_data
 
 @router.post("/verify-reset-code")
 def verify_reset_code(data: schemas.VerifyCode):

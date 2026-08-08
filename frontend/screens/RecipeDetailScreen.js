@@ -20,15 +20,54 @@ const RecipeDetailScreen = ({
     recipe
   } = route.params || {};
 
-  // Extract values dynamically with fallbacks
-  const title = recipe?.name || recipe?.title || 'Delicious Recipe';
-  const description = recipe?.description || '';
-  const cookingTime = recipe?.cooking_time || recipe?.cook_time || '30 min';
-  const calories = recipe?.nutrition?.calories || recipe?.calories || 'N/A';
-  const difficulty = recipe?.difficulty || 'Medium';
+  let parsedRecipe = { ...recipe };
+  
+  // Clean up if the whole recipe JSON was saved into one field by mistake
+  const fieldsToCheck = [parsedRecipe.description, parsedRecipe.making_process, parsedRecipe.steps, parsedRecipe.instructions, parsedRecipe.ingredients];
+  for (const field of fieldsToCheck) {
+    if (typeof field === 'string' && field.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(field);
+        if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+          parsedRecipe = { ...parsedRecipe, ...parsed };
+          // Don't render the raw JSON as description if we found the payload here
+          if (parsedRecipe.description === field) {
+            parsedRecipe.description = parsed.description || '';
+          }
+          break;
+        }
+      } catch (e) {}
+    }
+  }
 
-  // Ingredients (normalize array of objects or strings)
-  const rawIngredients = recipe?.ingredients || [];
+  // Extract values dynamically with fallbacks
+  const title = parsedRecipe.name || parsedRecipe.recipe_name || parsedRecipe.title || 'Delicious Recipe';
+  const description = parsedRecipe.description || '';
+  
+  const rawTime = parsedRecipe.cooking_time || parsedRecipe.cook_time || parsedRecipe.prep_time;
+  const cookingTime = rawTime ? (typeof rawTime === 'number' ? `${rawTime} min` : rawTime) : '30 min';
+  
+  const rawCalories = parsedRecipe.nutrition?.calories || parsedRecipe.calories;
+  const calories = rawCalories ? (typeof rawCalories === 'number' ? `${Math.round(rawCalories)} kcal` : rawCalories) : 'N/A';
+  
+  const difficulty = parsedRecipe.difficulty || 'Medium';
+
+  let rawIngredients = parsedRecipe.ingredients || [];
+  if (typeof rawIngredients === 'string') {
+    try {
+      const parsed = JSON.parse(rawIngredients);
+      rawIngredients = parsed;
+    } catch (e) {
+      rawIngredients = rawIngredients.split(',').map(s => s.trim()).filter(Boolean);
+    }
+  }
+  if (typeof rawIngredients === 'object' && rawIngredients !== null && !Array.isArray(rawIngredients)) {
+    rawIngredients = rawIngredients.ingredients || rawIngredients.items || Object.values(rawIngredients);
+  }
+  if (!Array.isArray(rawIngredients)) {
+    rawIngredients = typeof rawIngredients === 'string' ? [rawIngredients] : [];
+  }
+
   const ingredients = rawIngredients.map(item => {
     if (typeof item === 'object' && item !== null) {
       return `${item.amount || ''} ${item.name || ''}`.trim();
@@ -37,79 +76,104 @@ const RecipeDetailScreen = ({
   });
 
   // Instructions
-  const rawInstructions = recipe?.instructions || recipe?.making_process || [];
-  const instructions = Array.isArray(rawInstructions) ? rawInstructions : typeof rawInstructions === 'string' ? rawInstructions.split('\n') : [];
+  let rawInstructions = parsedRecipe.instructions || parsedRecipe.making_process || parsedRecipe.steps || [];
+  if (typeof rawInstructions === 'string') {
+    try {
+      const parsed = JSON.parse(rawInstructions);
+      rawInstructions = parsed;
+    } catch (e) {
+      // Split by newlines or numbers like "1. "
+      rawInstructions = rawInstructions.split(/(?:\r?\n|(?=\d+\.\s))/).map(s => s.trim()).filter(Boolean);
+    }
+  }
+  
+  // If the parsed JSON is actually an object (like the full recipe payload), extract the steps
+  if (typeof rawInstructions === 'object' && rawInstructions !== null && !Array.isArray(rawInstructions)) {
+    rawInstructions = rawInstructions.making_process || rawInstructions.steps || rawInstructions.instructions || Object.values(rawInstructions);
+  }
+  
+  if (!Array.isArray(rawInstructions)) {
+    rawInstructions = typeof rawInstructions === 'string' ? [rawInstructions] : [];
+  }
+  
+  const instructions = rawInstructions.map(step => {
+    if (typeof step === 'object' && step !== null) {
+      return step.step || step.instruction || step.description || JSON.stringify(step);
+    }
+    return String(step);
+  }).filter(Boolean);
 
   // Tips
-  const tips = recipe?.tips || [];
+  let tips = parsedRecipe.tips || [];
+  if (typeof tips === 'string') {
+    try { tips = JSON.parse(tips); } catch (e) { tips = []; }
+  }
+  if (!Array.isArray(tips)) tips = [];
   return <SafeAreaView style={styles.container}>
-      <LinearGradient colors={Theme.gradients.background} style={styles.gradient} start={{
+    <LinearGradient colors={Theme.gradients.background} style={styles.gradient} start={{
       x: 0,
       y: 0
     }} end={{
       x: 0,
       y: 1
     }}>
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {/* Hero Header */}
-          <LinearGradient colors={['#064E3B', '#059669', '#22C55E']} style={styles.imageHeader} start={{
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Hero Header */}
+        <LinearGradient colors={['#064E3B', '#059669', '#22C55E']} style={styles.imageHeader} start={{
           x: 0,
           y: 0
         }} end={{
           x: 1,
           y: 1
         }}>
-            <TouchableOpacity 
-              onPress={() => navigation.goBack()} 
-              style={[
-                styles.backButton, 
-                recipe?.ai_generated === 1 && { backgroundColor: '#10b981' }
-              ]}
-            >
-              <ChevronLeft size={22} color={recipe?.ai_generated === 1 ? '#FFFFFF' : Theme.colors.text} />
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <ChevronLeft size={24} color="#000000" />
+          </TouchableOpacity>
 
-            <View style={styles.heroCenter}>
-              <View style={styles.heroEmojiBg}>
-                <Text style={styles.heroEmoji}>🍲</Text>
-              </View>
-              {recipe?.ai_generated === 1 && <View style={styles.aiTag}>
-                  <Sparkles size={11} color="#D97706" />
-                  <Text style={styles.aiTagText}>{t("RecipeDetailScreen.AI_GENERATED_RECIPE")}</Text>
-                </View>}
+          <View style={styles.heroCenter}>
+            <View style={styles.heroEmojiBg}>
+              <Text style={styles.heroEmoji}>🍲</Text>
             </View>
-          </LinearGradient>
+            {parsedRecipe.ai_generated === 1 && <View style={styles.aiTag}>
+              <Sparkles size={11} color="#D97706" />
+              <Text style={styles.aiTagText}>{t("RecipeDetailScreen.AI_GENERATED_RECIPE")}</Text>
+            </View>}
+          </View>
+        </LinearGradient>
 
-          {/* Card Content */}
-          <View style={styles.content}>
-            <Text style={[styles.title, recipe?.ai_generated === 1 && { color: '#000000' }]}>{title}</Text>
-            {description ? <Text style={[styles.description, recipe?.ai_generated === 1 && { color: '#000000' }]}>{description}</Text> : null}
+        {/* Card Content */}
+        <View style={styles.content}>
+          <Text style={[styles.title, recipe?.ai_generated === 1 && { color: '#000000' }]}>{title}</Text>
+          {description ? <Text style={[styles.description, recipe?.ai_generated === 1 && { color: '#000000' }]}>{description}</Text> : null}
 
-            {/* Meta Row */}
-            <View style={styles.metaRow}>
-              <View style={[styles.metaChip, recipe?.ai_generated === 1 && { backgroundColor: '#10B981' }]}>
-                <Clock size={14} color={recipe?.ai_generated === 1 ? '#000000' : Theme.colors.primary} strokeWidth={2} />
-                <Text style={[styles.meta, recipe?.ai_generated === 1 && { color: '#FFFFFF' }]}>{cookingTime}</Text>
-              </View>
-              <View style={[styles.metaChip, recipe?.ai_generated === 1 && { backgroundColor: '#10B981' }]}>
-                <Flame size={14} color={recipe?.ai_generated === 1 ? '#000000' : Theme.colors.danger} strokeWidth={2} />
-                <Text style={[styles.meta, recipe?.ai_generated === 1 && { color: '#FFFFFF' }]}>{calories}{t("RecipeDetailScreen.kcal")}</Text>
-              </View>
-              {recipe?.servings && <View style={[styles.metaChip, recipe?.ai_generated === 1 && { backgroundColor: '#10B981' }]}>
-                  <UtensilsCrossed size={14} color={recipe?.ai_generated === 1 ? '#000000' : Theme.colors.accent} strokeWidth={2} />
-                  <Text style={[styles.meta, recipe?.ai_generated === 1 && { color: '#FFFFFF' }]}>{recipe.servings}{t("RecipeDetailScreen.Servings")}</Text>
-                </View>}
-              <View style={[styles.metaChip, recipe?.ai_generated === 1 && { backgroundColor: '#10B981' }]}>
-                <Star size={14} color={recipe?.ai_generated === 1 ? '#000000' : Theme.colors.warning} fill={recipe?.ai_generated === 1 ? '#000000' : Theme.colors.warning} strokeWidth={0} />
-                <Text style={[styles.meta, recipe?.ai_generated === 1 && { color: '#FFFFFF' }]}>{difficulty}</Text>
-              </View>
+          {/* Meta Row */}
+          <View style={styles.metaRow}>
+            <View style={[styles.metaChip, recipe?.ai_generated === 1 && { backgroundColor: '#10B981' }]}>
+              <Clock size={14} color={recipe?.ai_generated === 1 ? '#000000' : Theme.colors.primary} strokeWidth={2} />
+              <Text style={[styles.meta, recipe?.ai_generated === 1 && { color: '#FFFFFF' }]}>{cookingTime}</Text>
             </View>
+            <View style={[styles.metaChip, recipe?.ai_generated === 1 && { backgroundColor: '#10B981' }]}>
+              <Flame size={14} color={recipe?.ai_generated === 1 ? '#000000' : Theme.colors.danger} strokeWidth={2} />
+              <Text style={[styles.meta, recipe?.ai_generated === 1 && { color: '#FFFFFF' }]}>{calories}{t("RecipeDetailScreen.kcal")}</Text>
+            </View>
+            {recipe?.servings && <View style={[styles.metaChip, recipe?.ai_generated === 1 && { backgroundColor: '#10B981' }]}>
+              <UtensilsCrossed size={14} color={recipe?.ai_generated === 1 ? '#000000' : Theme.colors.accent} strokeWidth={2} />
+              <Text style={[styles.meta, recipe?.ai_generated === 1 && { color: '#FFFFFF' }]}>{recipe.servings}{t("RecipeDetailScreen.Servings")}</Text>
+            </View>}
+            <View style={[styles.metaChip, recipe?.ai_generated === 1 && { backgroundColor: '#10B981' }]}>
+              <Star size={14} color={recipe?.ai_generated === 1 ? '#000000' : Theme.colors.warning} fill={recipe?.ai_generated === 1 ? '#000000' : Theme.colors.warning} strokeWidth={0} />
+              <Text style={[styles.meta, recipe?.ai_generated === 1 && { color: '#FFFFFF' }]}>{difficulty}</Text>
+            </View>
+          </View>
 
-            {/* Nutrition Information */}
-            {recipe?.nutrition && <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{t("RecipeDetailScreen.Nutrition_Information")}</Text>
-                <View style={styles.nutritionGrid}>
-                  {[{
+          {/* Nutrition Information */}
+          {recipe?.nutrition && <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t("RecipeDetailScreen.Nutrition_Information")}</Text>
+            <View style={styles.nutritionGrid}>
+              {[{
                 label: 'Protein',
                 val: `${recipe.nutrition.protein || 0}g`,
                 color: '#3B82F6'
@@ -134,75 +198,75 @@ const RecipeDetailScreen = ({
                 val: `${recipe.nutrition.sodium || 0}mg`,
                 color: '#8B5CF6'
               }].map((n, i) => <View key={i} style={styles.nutriBox}>
-                      <Text style={[styles.nutriValue, {
+                <Text style={[styles.nutriValue, {
                   color: n.color
                 }]}>{n.val}</Text>
-                      <Text style={styles.nutriLabel}>{n.label}</Text>
-                    </View>)}
+                <Text style={styles.nutriLabel}>{n.label}</Text>
+              </View>)}
+            </View>
+          </View>}
+
+          {/* Ingredients */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t("RecipeDetailScreen.Ingredients_You_Need")}</Text>
+            <View style={[styles.ingredientsCard, recipe?.ai_generated === 1 && { backgroundColor: '#10B981' }]}>
+              {ingredients.length > 0 ? ingredients.map((item, i) => <View key={i} style={styles.ingredientRow}>
+                <View style={[styles.checkIcon, recipe?.ai_generated === 1 && { backgroundColor: '#000000' }]}>
+                  <Check size={12} color="#FFFFFF" strokeWidth={3} />
                 </View>
-              </View>}
+                <Text style={[styles.ingredientText, recipe?.ai_generated === 1 && { color: '#FFFFFF' }]}>{item}</Text>
+              </View>) : <Text style={styles.instructionText}>{t("RecipeDetailScreen.No_ingredients_listed")}</Text>}
+            </View>
+          </View>
 
-            {/* Ingredients */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t("RecipeDetailScreen.Ingredients_You_Need")}</Text>
-              <View style={[styles.ingredientsCard, recipe?.ai_generated === 1 && { backgroundColor: '#10B981' }]}>
-                {ingredients.length > 0 ? ingredients.map((item, i) => <View key={i} style={styles.ingredientRow}>
-                    <View style={[styles.checkIcon, recipe?.ai_generated === 1 && { backgroundColor: '#000000' }]}>
-                      <Check size={12} color="#FFFFFF" strokeWidth={3} />
-                    </View>
-                    <Text style={[styles.ingredientText, recipe?.ai_generated === 1 && { color: '#FFFFFF' }]}>{item}</Text>
-                  </View>) : <Text style={styles.instructionText}>{t("RecipeDetailScreen.No_ingredients_listed")}</Text>}
+          {/* Instructions */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t("RecipeDetailScreen.Step_by_Step_Instructions")}</Text>
+            {instructions.length > 0 ? instructions.map((stepItem, i) => <View key={i} style={styles.stepCard}>
+              <View style={styles.stepBadge}>
+                <Text style={styles.stepBadgeText}>{i + 1}</Text>
               </View>
-            </View>
+              <Text style={[styles.instructionText, recipe?.ai_generated === 1 && { color: '#000000' }]}>
+                {stepItem.replace(/^(?:Step \d+:?)\s*/i, '')}
+              </Text>
+            </View>) : <Text style={styles.instructionText}>{t("RecipeDetailScreen.No_instructions_provided")}</Text>}
+          </View>
 
-            {/* Instructions */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t("RecipeDetailScreen.Step_by_Step_Instructions")}</Text>
-              {instructions.length > 0 ? instructions.map((stepItem, i) => <View key={i} style={styles.stepCard}>
-                  <View style={styles.stepBadge}>
-                    <Text style={styles.stepBadgeText}>{i + 1}</Text>
-                  </View>
-                  <Text style={[styles.instructionText, recipe?.ai_generated === 1 && { color: '#000000' }]}>
-                    {stepItem.replace(/^(?:Step \d+:?)\s*/i, '')}
-                  </Text>
-                </View>) : <Text style={styles.instructionText}>{t("RecipeDetailScreen.No_instructions_provided")}</Text>}
-            </View>
-
-            {/* Tips */}
-            {tips.length > 0 && <View style={styles.section}>
-                <View style={{
+          {/* Tips */}
+          {tips.length > 0 && <View style={styles.section}>
+            <View style={{
               flexDirection: 'row',
               alignItems: 'center',
               gap: 6,
               marginBottom: 12
             }}>
-                  <Lightbulb size={18} color={Theme.colors.accent} />
-                  <Text style={styles.sectionTitle}>{t("RecipeDetailScreen.Chef_s_Tips")}</Text>
-                </View>
-                {tips.map((tip, i) => <View key={i} style={styles.tipCard}>
-                    <Text style={styles.tipText}>💡 {tip}</Text>
-                  </View>)}
-              </View>}
-          </View>
-        </ScrollView>
+              <Lightbulb size={18} color={Theme.colors.accent} />
+              <Text style={styles.sectionTitle}>{t("RecipeDetailScreen.Chef_s_Tips")}</Text>
+            </View>
+            {tips.map((tip, i) => <View key={i} style={styles.tipCard}>
+              <Text style={styles.tipText}>💡 {tip}</Text>
+            </View>)}
+          </View>}
+        </View>
+      </ScrollView>
 
-        {/* Footer Action */}
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.startCookingBtn} onPress={() => navigation.navigate('CookingMode')} activeOpacity={0.88}>
-            <LinearGradient colors={Theme.gradients.primary} style={styles.startCookingGrad} start={{
+      {/* Footer Action */}
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.startCookingBtn} onPress={() => navigation.navigate('CookingMode')} activeOpacity={0.88}>
+          <LinearGradient colors={Theme.gradients.primary} style={styles.startCookingGrad} start={{
             x: 0,
             y: 0
           }} end={{
             x: 1,
             y: 0
           }}>
-              <ChefHat size={22} color="#FFFFFF" />
-              <Text style={styles.startCookingText}>{t("RecipeDetailScreen.Start_Cooking_Mode")}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
-    </SafeAreaView>;
+            <ChefHat size={22} color="#FFFFFF" />
+            <Text style={styles.startCookingText}>{t("RecipeDetailScreen.Start_Cooking_Mode")}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </LinearGradient>
+  </SafeAreaView>;
 };
 const styles = StyleSheet.create({
   container: {
@@ -222,17 +286,22 @@ const styles = StyleSheet.create({
     position: 'relative'
   },
   backButton: {
+    position: 'absolute',
+    top: 16,
+    left: 20,
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: '#10b981', // Solid vibrant green
     justifyContent: 'center',
     alignItems: 'center',
-    ...Theme.shadows.xs
+    ...Theme.shadows.md,
+    zIndex: 10
   },
   heroCenter: {
     alignItems: 'center',
-    marginTop: -10
+    justifyContent: 'center',
+    height: '100%'
   },
   heroEmojiBg: {
     width: 80,
@@ -342,7 +411,7 @@ const styles = StyleSheet.create({
   ingredientText: {
     fontFamily: Theme.typography.fontFamily.body,
     fontSize: 15,
-    color: Theme.colors.text,
+    color: '#000000',
     flex: 1
   },
   stepCard: {
@@ -374,7 +443,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: Theme.typography.fontFamily.body,
     fontSize: 15,
-    color: Theme.colors.text,
+    color: '#000000',
     lineHeight: 22
   },
   tipCard: {

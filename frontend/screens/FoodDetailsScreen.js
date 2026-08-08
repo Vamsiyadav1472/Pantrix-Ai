@@ -75,7 +75,7 @@ const FoodDetailsScreen = ({
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <ChevronLeft size={22} color={Theme.colors.text} />
+            <ChevronLeft size={22} color="#000000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t("FoodDetailsScreen.AI_Scan_Analysis")}</Text>
           <View style={{
@@ -107,12 +107,12 @@ const FoodDetailsScreen = ({
           {/* Toggle Tabs */}
           <View style={styles.optionsGrid}>
             <TouchableOpacity style={[styles.optionCard, activeTab === 'calories' && styles.activeOption]} onPress={() => setActiveTab('calories')} activeOpacity={0.85}>
-              <Zap size={20} color={activeTab === 'calories' ? '#FFF' : Theme.colors.primary} />
+              <Zap size={20} color={activeTab === 'calories' ? '#FFF' : '#000000'} />
               <Text style={[styles.optionText, activeTab === 'calories' && styles.activeOptionText]}>{t("FoodDetailsScreen.Nutrition_Info")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={[styles.optionCard, activeTab === 'process' && styles.activeOption]} onPress={() => setActiveTab('process')} activeOpacity={0.85}>
-              <ChefHat size={20} color={activeTab === 'process' ? '#FFF' : Theme.colors.primary} />
+              <ChefHat size={20} color={activeTab === 'process' ? '#FFF' : '#000000'} />
               <Text style={[styles.optionText, activeTab === 'process' && styles.activeOptionText]}>{t("FoodDetailsScreen.Cooking_Steps")}</Text>
             </TouchableOpacity>
           </View>
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: Theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     ...Theme.shadows.xs
@@ -270,20 +270,20 @@ const styles = StyleSheet.create({
   foodNameLabel: {
     fontSize: 11,
     fontFamily: Theme.typography.fontFamily.bodySemiBold,
-    color: Theme.colors.textMuted,
+    color: '#6B7280',
     letterSpacing: 1.2
   },
   foodNameMain: {
     fontSize: 26,
     fontFamily: Theme.typography.fontFamily.heading,
-    color: Theme.colors.text,
+    color: '#000000',
     marginTop: 4,
     textAlign: 'center'
   },
   foodDesc: {
     fontSize: 14,
     fontFamily: Theme.typography.fontFamily.body,
-    color: Theme.colors.textMuted,
+    color: '#4B5563',
     textAlign: 'center',
     marginTop: 8
   },
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 14,
     fontFamily: Theme.typography.fontFamily.bodySemiBold,
-    color: Theme.colors.text
+    color: '#000000'
   },
   activeOptionText: {
     color: '#FFF'
@@ -407,13 +407,13 @@ const styles = StyleSheet.create({
   extraInfoTitle: {
     fontSize: 14,
     fontFamily: Theme.typography.fontFamily.bodySemiBold,
-    color: Theme.colors.text,
+    color: '#000000',
     marginBottom: 8
   },
   subHeader: {
     fontSize: 15,
     fontFamily: Theme.typography.fontFamily.bodySemiBold,
-    color: Theme.colors.text,
+    color: '#000000',
     marginTop: 12,
     marginBottom: 8
   },
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontFamily: Theme.typography.fontFamily.body,
-    color: Theme.colors.text,
+    color: '#111827',
     lineHeight: 22
   }
 });

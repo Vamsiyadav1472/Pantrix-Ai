@@ -56,6 +56,7 @@ const LoginScreen = ({ navigation }) => {
       name: realName,
       username: realName,
       email: user.email || data.email || fallbackEmail,
+      avatar_url: user.avatar_url || data.avatar_url || '',
       token: data.token || data.access_token || user.token || ''
     };
     await AsyncStorage.setItem('userData', JSON.stringify(userData));

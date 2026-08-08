@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"), override=True)
 
 from database import engine, Base, SessionLocal, check_db_connection, get_db
 from routes import (
@@ -250,17 +250,13 @@ The JSON MUST strictly follow this exact format:
         api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
         if api_key:
-            import google.generativeai as genai
-
-            genai.configure(api_key=api_key)
+            from google import genai
+            
+            client = genai.Client(api_key=api_key)
 
             model_names = [
-                "gemini-2.5-flash",
-                "gemini-2.5-pro",
-                "gemini-2.0-flash",
-                "gemini-2.0-flash-lite",
-                "gemini-1.5-flash",
-                "gemini-1.5-pro",
+                "gemini-3.5-flash",
+                "gemini-flash-latest"
             ]
 
             ai_response = None
@@ -269,42 +265,12 @@ The JSON MUST strictly follow this exact format:
             for model_name in model_names:
                 try:
                     print(f"Trying Gemini model: {model_name}")
-                    model = genai.GenerativeModel(model_name)
-                    ai_response = model.generate_content(system_prompt)
+                    ai_response = client.models.generate_content(model=model_name, contents=system_prompt)
                     print(f"Gemini model worked: {model_name}")
                     break
                 except Exception as model_error:
                     last_error = model_error
                     print(f"Gemini model failed: {model_name} - {model_error}")
-
-            if ai_response is None:
-                print("Trying automatic Gemini model detection...")
-
-                available_models = genai.list_models()
-
-                for available_model in available_models:
-                    try:
-                        supported_methods = getattr(
-                            available_model,
-                            "supported_generation_methods",
-                            []
-                        )
-
-                        model_name = getattr(available_model, "name", "")
-
-                        if "generateContent" in supported_methods:
-                            print(f"Trying available Gemini model: {model_name}")
-                            model = genai.GenerativeModel(model_name)
-                            ai_response = model.generate_content(system_prompt)
-                            print(f"Available Gemini model worked: {model_name}")
-                            break
-
-                    except Exception as auto_model_error:
-                        last_error = auto_model_error
-                        print(
-                            f"Available Gemini model failed: "
-                            f"{getattr(available_model, 'name', '')} - {auto_model_error}"
-                        )
 
             if ai_response is None:
                 if last_error is not None:

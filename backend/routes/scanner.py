@@ -12,7 +12,8 @@ from typing import List, Dict, Any, Optional
 router = APIRouter(prefix="/api/scanner", tags=["Scanner"])
 
 # Initialize Gemini Client
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "AIzaSyDummyKeyForInitialization"
+client = genai.Client(api_key=api_key)
 
 def safe_float(value, default=0.0):
     try:
@@ -100,9 +101,8 @@ async def analyze_food(user_id: int, file: UploadFile = File(...), db: Session =
             else:
                 # Try Gemini models in order: 1.5 Flash first, then 2.0 Flash Exp
                 models_to_try = [
-                    ("gemini-2.5-flash", "Gemini 2.5 Flash"),
-                    ("gemini-2.5-pro", "Gemini 2.5 Pro"),
-                    ("gemini-2.0-flash", "Gemini 2.0 Flash")
+                    ("gemini-3.5-flash", "Gemini 3.5 Flash"),
+                    ("gemini-flash-latest", "Gemini Flash Latest")
                 ]
                 
                 data = None
@@ -220,7 +220,7 @@ async def analyze_food(user_id: int, file: UploadFile = File(...), db: Session =
                 "result_type": "scanner",
                 "prompt": "food_analysis",
                 "result_data": data,
-                "model_used": "gemini-2.0-flash",
+                "model_used": "gemini-3.5-flash",
                 "tokens_used": 0,
                 "processing_ms": 0
             })

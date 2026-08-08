@@ -18,7 +18,7 @@ const Input = ({ label, error, style, leftIcon, rightIcon, ...props }) => {
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
         <TextInput
           style={styles.input}
-          placeholderTextColor={Theme.colors.textPlaceholder}
+          placeholderTextColor="#9ca3af"
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           {...props}
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: Theme.typography.fontFamily.bodySemiBold,
     fontSize: 13,
-    color: Theme.colors.textMuted,
+    color: '#10b981',
     marginBottom: 8,
     letterSpacing: 0.3,
   },
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: Theme.typography.fontFamily.body,
     fontSize: 15,
-    color: Theme.colors.text,
+    color: '#000000',
     height: '100%',
   },
   inputError: {

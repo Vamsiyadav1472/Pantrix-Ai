@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import * as Notifications from 'expo-notifications';
+// import * as Notifications from 'expo-notifications'; // Temporarily disabled for Expo Go SDK 53 compatibility
 import {
   View,
   Text,
@@ -179,51 +179,51 @@ const getWasteColor = (percentage) => {
 };
 
 // ─── Expiry Notification Helper ───────────────────────────────────────────────
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// Notifications.setNotificationHandler({
+//   handleNotification: async () => ({
+//     shouldShowAlert: true,
+//     shouldPlaySound: true,
+//     shouldSetBadge: true,
+//   }),
+// });
 
 const scheduleExpiryNotifications = async (pantryItems) => {
-  try {
-    const { status } = await Notifications.requestPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('Notification permission not granted.');
-      return;
-    }
-
-    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    for (const notif of scheduled) {
-      if (notif.content && notif.content.title === 'Pantry Expiry Alert') {
-        await Notifications.cancelScheduledNotificationAsync(notif.identifier);
-      }
-    }
-
-    const now = new Date();
-    const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
-
-    for (const item of pantryItems) {
-      if (!item.expiry_date) continue;
-      const expDate = new Date(item.expiry_date);
-      const diffMs = expDate - now;
-      if (diffMs > 0 && diffMs <= twoDaysMs) {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: 'Pantry Expiry Alert',
-            body: `${item.name} is expiring soon. Use it before it expires.`,
-            sound: true,
-            priority: Notifications.AndroidNotificationPriority.HIGH,
-          },
-          trigger: { seconds: 5, repeats: false },
-        });
-      }
-    }
-  } catch (err) {
-    console.log('Notification scheduling error:', err);
-  }
+  // try {
+  //   const { status } = await Notifications.requestPermissionsAsync();
+  //   if (status !== 'granted') {
+  //     console.log('Notification permission not granted.');
+  //     return;
+  //   }
+  //
+  //   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  //   for (const notif of scheduled) {
+  //     if (notif.content && notif.content.title === 'Pantry Expiry Alert') {
+  //       await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+  //     }
+  //   }
+  //
+  //   const now = new Date();
+  //   const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
+  //
+  //   for (const item of pantryItems) {
+  //     if (!item.expiry_date) continue;
+  //     const expDate = new Date(item.expiry_date);
+  //     const diffMs = expDate - now;
+  //     if (diffMs > 0 && diffMs <= twoDaysMs) {
+  //       await Notifications.scheduleNotificationAsync({
+  //         content: {
+  //           title: 'Pantry Expiry Alert',
+  //           body: `${item.name} is expiring soon. Use it before it expires.`,
+  //           sound: true,
+  //           priority: Notifications.AndroidNotificationPriority.HIGH,
+  //         },
+  //         trigger: { seconds: 5, repeats: false },
+  //       });
+  //     }
+  //   }
+  // } catch (err) {
+  //   console.log('Notification scheduling error:', err);
+  // }
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -444,10 +444,10 @@ const HomeDashboardScreen = ({ navigation }) => {
   };
 
   const mealTypes = [
-    { key: 'breakfast', value: 'Breakfast', emoji: '🌅', color: '#F59E0B', bg: '#FEF3C7' },
-    { key: 'lunch', value: 'Lunch', emoji: '☀️', color: '#10B981', bg: '#D1FAE5' },
-    { key: 'snack', value: 'Snack', emoji: '🍎', color: '#EF4444', bg: '#FEE2E2' },
-    { key: 'dinner', value: 'Dinner', emoji: '🌙', color: '#6366F1', bg: '#E0E7FF' },
+    { key: 'breakfast', value: 'Breakfast', label: 'Breakfast', emoji: '🥣', defaultMeal: 'Oats & Berries', calories: '320 kcal' },
+    { key: 'lunch', value: 'Lunch', label: 'Lunch', emoji: '🍗', defaultMeal: 'Grilled Chicken', calories: '520 kcal' },
+    { key: 'snack', value: 'Snack', label: 'Snacks', emoji: '🍨', defaultMeal: 'Greek Yogurt', calories: '180 kcal' },
+    { key: 'dinner', value: 'Dinner', label: 'Dinner', emoji: '🥗', defaultMeal: 'Veg Stir Fry', calories: '450 kcal' },
   ];
 
   const statCards = [
@@ -615,62 +615,32 @@ const HomeDashboardScreen = ({ navigation }) => {
                   <Calendar size={18} color={Theme.colors.primary} strokeWidth={2} />
                   <Text style={styles.sectionTitle}>{getText(language, 'mealPlanner')}</Text>
                 </View>
-                <TouchableOpacity
-                  style={styles.seeAllBtn}
-                  onPress={() => navigation.navigate('MealPlanner')}
-                >
-                  <Text style={styles.seeAllText}>{getText(language, 'goToPlanner')}</Text>
-                  <ChevronRight size={14} color="#FFFFFF" />
-                </TouchableOpacity>
               </View>
 
-              <View style={styles.mealCard}>
+              <View style={styles.mealCardsGridContainer}>
                 {mealTypes.map((type) => {
                   const meal = todayMeals.find(
-                    (m) => m.meal_type.toLowerCase() === type.value.toLowerCase()
+                    (m) => m.meal_type.toLowerCase() === type.value.toLowerCase() || m.meal_type.toLowerCase() === type.key.toLowerCase()
                   );
+                  const mealTitle = meal?.meal_name || meal?.recipe_name || type.defaultMeal;
+                  const cals = meal?.nutrition?.calories || meal?.calories ? `${meal?.nutrition?.calories || meal?.calories} kcal` : type.calories;
+
                   return (
-                    <View key={type.value} style={styles.mealRow}>
-                      {meal ? (
-                        <TouchableOpacity
-                          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 }}
-                          onPress={() => navigation.navigate('MealPlanner')}
-                        >
-                          <View style={[styles.mealEmojiBg, { backgroundColor: type.bg }]}>
-                            <Text style={styles.mealEmoji}>{type.emoji}</Text>
-                          </View>
-                          <View style={styles.mealInfo}>
-                            <Text style={[styles.mealTypeLabel, { color: type.color }]}>{getText(language, type.key)}</Text>
-                            <Text style={styles.mealName} numberOfLines={1}>
-                              {meal.meal_name || meal.recipe_name}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      ) : (
-                        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-                          <View style={[styles.mealEmojiBg, { backgroundColor: type.bg }]}>
-                            <Text style={styles.mealEmoji}>{type.emoji}</Text>
-                          </View>
-                          <View style={styles.mealInfo}>
-                            <Text style={[styles.mealTypeLabel, { color: type.color }]}>{getText(language, type.key)}</Text>
-                            <Text style={styles.mealName} numberOfLines={1}>
-                              {getText(language, 'noMealPlanned')}
-                            </Text>
-                          </View>
-                          <TouchableOpacity
-                            style={styles.addMealBtn}
-                            onPress={() =>
-                              navigation.navigate('AddMealPlan', {
-                                mealType: type.value,
-                                date: new Date().toISOString().split('T')[0],
-                              })
-                            }
-                          >
-                            <Plus size={14} color={Theme.colors.primary} />
-                          </TouchableOpacity>
-                        </View>
-                      )}
-                    </View>
+                    <TouchableOpacity
+                      key={type.value}
+                      style={styles.mealCardColumn}
+                      onPress={() => navigation.navigate('MealPlanner')}
+                      activeOpacity={0.82}
+                    >
+                      <Text style={styles.mealCardTopLabel}>{type.label}</Text>
+                      <View style={styles.mealImageCircle}>
+                        <Text style={styles.mealImageEmoji}>{type.emoji}</Text>
+                      </View>
+                      <Text style={styles.mealCardTitle} numberOfLines={1}>
+                        {mealTitle}
+                      </Text>
+                      <Text style={styles.mealCardCal}>{cals}</Text>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
@@ -1021,15 +991,67 @@ const styles = StyleSheet.create({
     height: 28,
     backgroundColor: Theme.colors.border,
   },
-  // Meal Card
-  mealCard: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: 22,
-    padding: 16,
-    ...Theme.shadows.sm,
+  // Meal Card Grid (4-column Layout)
+  mealCardsGridContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  mealCardColumn: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: Theme.colors.borderLight,
-    gap: 12,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 164,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  mealCardTopLabel: {
+    fontSize: 13,
+    fontFamily: Theme.typography.fontFamily.bodySemiBold,
+    color: '#ffffff',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  mealImageCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  mealImageEmoji: {
+    fontSize: 28,
+  },
+  mealCardTitle: {
+    fontSize: 11,
+    fontFamily: Theme.typography.fontFamily.bodySemiBold,
+    color: '#e2e8f0',
+    textAlign: 'center',
+    marginBottom: 2,
+    paddingHorizontal: 2,
+  },
+  mealCardCal: {
+    fontSize: 11,
+    fontFamily: Theme.typography.fontFamily.body,
+    color: '#94a3b8',
+    textAlign: 'center',
   },
   mealRow: {
     flexDirection: 'row',

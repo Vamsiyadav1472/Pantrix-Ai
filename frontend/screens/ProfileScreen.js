@@ -41,10 +41,21 @@ const ProfileScreen = ({
     phone: '',
     address: ''
   });
+  const getAvatarUri = (avatarUrl) => {
+    if (!avatarUrl) return null;
+    if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://') || avatarUrl.startsWith('file://') || avatarUrl.startsWith('content://') || avatarUrl.startsWith('data:')) {
+      return avatarUrl;
+    }
+    const cleanBase = API_URL.replace(/\/api\/?$/, '');
+    const cleanPath = avatarUrl.startsWith('/') ? avatarUrl : `/${avatarUrl}`;
+    return `${cleanBase}${cleanPath}`;
+  };
+
   useFocusEffect(useCallback(() => {
     initProfile();
     loadLocalSettings();
   }, []));
+
   const initProfile = async () => {
     try {
       setLoading(true);
@@ -55,6 +66,7 @@ const ProfileScreen = ({
         setCurrentUserId(id);
         const savedName = parsed.full_name || parsed.name || parsed.username || parsed.email?.split('@')[0] || 'Pantrix User';
         const savedEmail = parsed.email || '';
+        const savedAvatar = parsed.avatar_url || '';
         setUser({
           full_name: savedName,
           name: savedName,
@@ -64,7 +76,7 @@ const ProfileScreen = ({
           birthday: parsed.birthday || '',
           phone: parsed.phone || '',
           address: parsed.address || '',
-          avatar_url: parsed.avatar_url || ''
+          avatar_url: savedAvatar
         });
         setProfileForm({
           bio: parsed.bio || '',
@@ -72,36 +84,17 @@ const ProfileScreen = ({
           phone: parsed.phone || '',
           address: parsed.address || ''
         });
-        fetchProfile(id, savedName, savedEmail);
+        fetchProfile(id, savedName, savedEmail, savedAvatar);
         fetchProfileStats(id);
       } else {
-        setUser({
-          full_name: 'Pantrix User',
-          name: 'Pantrix User',
-          username: 'Pantrix User',
-          email: '',
-          bio: '',
-          birthday: '',
-          phone: '',
-          address: ''
-        });
-        setLoading(false);
+        fetchProfile(1);
       }
     } catch (error) {
       console.log('Error initializing profile:', error);
-      setUser({
-        full_name: 'Pantrix User',
-        name: 'Pantrix User',
-        username: 'Pantrix User',
-        email: '',
-        bio: '',
-        birthday: '',
-        phone: '',
-        address: ''
-      });
       setLoading(false);
     }
   };
+
   const fetchProfileStats = async userId => {
     try {
       const response = await profileStatsService.getStats(userId);
@@ -115,7 +108,8 @@ const ProfileScreen = ({
       console.log('Error fetching profile stats:', error);
     }
   };
-  const fetchProfile = async (id, savedName = '', savedEmail = '') => {
+
+  const fetchProfile = async (id, savedName = '', savedEmail = '', savedAvatar = '') => {
     try {
       if (profileService?.getProfile) {
         const response = await profileService.getProfile(id);
@@ -123,6 +117,8 @@ const ProfileScreen = ({
         const backendName = data?.full_name || data?.name || data?.username || data?.display_name || '';
         const finalName = backendName && backendName !== 'Pantrix User' ? backendName : savedName || savedEmail?.split('@')[0] || 'Pantrix User';
         const finalEmail = data?.email || savedEmail || '';
+        const finalAvatar = data?.avatar_url || savedAvatar || '';
+
         const updatedUser = {
           full_name: finalName,
           name: finalName,
@@ -131,7 +127,8 @@ const ProfileScreen = ({
           bio: data?.bio || '',
           birthday: data?.birthday || '',
           phone: data?.phone || '',
-          address: data?.address || ''
+          address: data?.address || '',
+          avatar_url: finalAvatar
         };
         setUser(updatedUser);
         setProfileForm({
@@ -140,6 +137,7 @@ const ProfileScreen = ({
           phone: data?.phone || '',
           address: data?.address || ''
         });
+
         const oldUserData = await AsyncStorage.getItem('userData');
         const parsedOld = oldUserData ? JSON.parse(oldUserData) : {};
         await AsyncStorage.setItem('userData', JSON.stringify({
@@ -154,7 +152,7 @@ const ProfileScreen = ({
           birthday: data?.birthday || '',
           phone: data?.phone || '',
           address: data?.address || '',
-          avatar_url: data?.avatar_url || ''
+          avatar_url: finalAvatar
         }));
       }
     } catch (error) {
@@ -163,6 +161,7 @@ const ProfileScreen = ({
       setLoading(false);
     }
   };
+
   const saveProfileDetails = async () => {
     try {
       setSavingProfile(true);
@@ -208,7 +207,7 @@ const ProfileScreen = ({
         return;
       }
       const pickerResult = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaType?.Images || ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -220,21 +219,26 @@ const ProfileScreen = ({
         const response = await authService.uploadAvatar(currentUserId, imageUri);
         
         if (response.data && response.data.avatar_url) {
-          const updatedUser = { ...user, avatar_url: response.data.avatar_url };
-          setUser(updatedUser);
+          const newAvatarUrl = response.data.avatar_url;
+          setUser(prevUser => ({
+            ...prevUser,
+            avatar_url: newAvatarUrl
+          }));
           
           const oldUserData = await AsyncStorage.getItem('userData');
           const parsedOld = oldUserData ? JSON.parse(oldUserData) : {};
           await AsyncStorage.setItem('userData', JSON.stringify({
             ...parsedOld,
-            avatar_url: response.data.avatar_url
+            avatar_url: newAvatarUrl
           }));
           Alert.alert('Success', 'Profile photo updated successfully!');
+        } else {
+          Alert.alert('Error', 'Failed to upload photo. Server response missing avatar URL.');
         }
       }
     } catch (error) {
       console.log('Error picking avatar:', error);
-      Alert.alert('Error', 'Failed to update profile photo.');
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to update profile photo.');
     } finally {
       setLoading(false);
     }
@@ -408,7 +412,7 @@ const ProfileScreen = ({
                 <View style={[styles.avatar, user?.avatar_url && { backgroundColor: 'transparent' }]}>
                   {user?.avatar_url ? (
                     <Image 
-                      source={{ uri: user.avatar_url.startsWith('http') ? user.avatar_url : `${API_URL.replace('/api', '')}${user.avatar_url}` }} 
+                      source={{ uri: getAvatarUri(user.avatar_url) }} 
                       style={{ width: '100%', height: '100%', borderRadius: 50 }} 
                     />
                   ) : (

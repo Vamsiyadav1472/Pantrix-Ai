@@ -66,7 +66,7 @@ const RecipeFilterScreen = ({
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <ChevronLeft size={24} color="#374151" strokeWidth={2.5} />
+          <ChevronLeft size={24} color="#000000" strokeWidth={2.5} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{t("RecipeFilterScreen.Filters")}</Text>
@@ -202,20 +202,17 @@ const styles = StyleSheet.create({
     paddingVertical: 14
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: Theme.colors.card,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#10b981',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   headerCenter: {
     flex: 1,

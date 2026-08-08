@@ -72,11 +72,11 @@ const EditItemScreen = ({
     }}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <ChevronLeft size={22} color={Theme.colors.text} />
+            <ChevronLeft size={22} color="#000000" strokeWidth={2.5} />
           </TouchableOpacity>
           <Text style={styles.title}>{t("EditItemScreen.Edit_Item")}</Text>
           <TouchableOpacity onPress={handleDelete} style={styles.deleteHeaderBtn}>
-            <Trash2 size={20} color={Theme.colors.danger} />
+            <Trash2 size={20} color="#000000" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
 
@@ -141,23 +141,32 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: '#10b981', // Solid vibrant green
     justifyContent: 'center',
     alignItems: 'center',
-    ...Theme.shadows.xs
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   deleteHeaderBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Theme.colors.dangerLight,
+    backgroundColor: '#ef4444', // Solid vibrant red
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    shadowColor: '#ef4444',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   title: {
     fontSize: 20,
     fontFamily: Theme.typography.fontFamily.heading,
-    color: Theme.colors.text
+    color: '#34d399'
   },
   content: {
     padding: 24,
@@ -177,7 +186,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontFamily: Theme.typography.fontFamily.bodySemiBold,
-    color: Theme.colors.textMuted,
+    color: '#10b981',
     marginBottom: 8,
     marginTop: 4
   },
