@@ -285,3 +285,15 @@ class FamilyMember(Base):
     diet_notes    = Column(Text)
     created_at    = Column(DateTime, default=datetime.utcnow)
     updated_at    = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+# ────────────────────────── Meal Feedback ────────────────────────────────────
+class MealFeedback(Base):
+    __tablename__ = "meal_feedback"
+
+    id            = Column(Integer, primary_key=True, index=True)
+    user_id       = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    meal_name     = Column(String(150), nullable=False)
+    meal_type     = Column(String(50)) # breakfast, lunch, snack, dinner
+    feedback_type = Column(String(50)) # liked, disliked, skipped, replaced, custom
+    rating        = Column(Integer, nullable=True) # 1-5, optional
+    created_at    = Column(DateTime, default=datetime.utcnow)

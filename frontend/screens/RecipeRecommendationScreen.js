@@ -224,7 +224,7 @@ const RecipeRecommendationScreen = ({
   };
   const handleGenerateRecipe = async () => {
     if (!aiPrompt.trim()) {
-      Alert.alert('Enter Recipe Name', 'Please type or speak a recipe name like "how to make biriyani".');
+      Alert.alert('Enter Recipe Name', 'Please type or speak a recipe name.');
       return;
     }
     setGenerating(true);

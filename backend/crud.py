@@ -261,6 +261,8 @@ def delete_recipe(db: Session, recipe_id: int) -> bool:
 def get_meal_plan_by_date(db: Session, user_id: int, target_date: date) -> Optional[models.MealPlan]:
     return db.query(models.MealPlan).filter(models.MealPlan.user_id == user_id, models.MealPlan.date == target_date).first()
 
+def get_meal_plan(db: Session, plan_id: int) -> Optional[models.MealPlan]:
+    return db.query(models.MealPlan).filter(models.MealPlan.id == plan_id).first()
 def create_meal_plan(
     db: Session, user_id: int, plan: schemas.MealPlanCreate
 ) -> models.MealPlan:
@@ -501,3 +503,16 @@ def delete_family_member(db: Session, member_id: int) -> bool:
     db.delete(db_member)
     db.commit()
     return True
+
+
+# ══════════════════════════ MEAL FEEDBACK ═════════════════════════════════════
+
+def add_meal_feedback(db: Session, user_id: int, feedback_data: schemas.MealFeedbackCreate) -> models.MealFeedback:
+    db_feedback = models.MealFeedback(user_id=user_id, **feedback_data.model_dump())
+    db.add(db_feedback)
+    db.commit()
+    db.refresh(db_feedback)
+    return db_feedback
+
+def get_meal_feedbacks(db: Session, user_id: int) -> List[models.MealFeedback]:
+    return db.query(models.MealFeedback).filter(models.MealFeedback.user_id == user_id).all()

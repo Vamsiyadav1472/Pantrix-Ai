@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const API_URL = 'http://172.17.2.18:8000/api';
+export const API_URL = 'http://10.52.222.19:8000/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -100,6 +100,10 @@ export const mealPlanService = {
   updateItem: (itemId, data) => api.put(`/meal-plans/meal-items/${itemId}`, data),
 
   deleteItem: (itemId) => api.delete(`/meal-plans/meal-items/${itemId}`),
+
+  submitFeedback: (userId, data) => api.post(`/meal-plans/feedback`, data, { params: { user_id: userId } }),
+
+  addCustomMeal: (data) => api.post(`/meal-plans/custom-meal`, data),
 };
 
 // GROCERY

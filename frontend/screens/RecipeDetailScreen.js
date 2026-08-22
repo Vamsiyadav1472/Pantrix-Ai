@@ -44,8 +44,32 @@ const RecipeDetailScreen = ({
   const title = parsedRecipe.name || parsedRecipe.recipe_name || parsedRecipe.title || 'Delicious Recipe';
   const description = parsedRecipe.description || '';
   
+  let totalTime = 0;
+  const p = String(parsedRecipe.prep_time || '0');
+  const c = String(parsedRecipe.cook_time || '0');
+  if (/^\d+$/.test(p) && /^\d+$/.test(c)) {
+    totalTime = parseInt(p) + parseInt(c);
+  }
+
   const rawTime = parsedRecipe.cooking_time || parsedRecipe.cook_time || parsedRecipe.prep_time;
-  const cookingTime = rawTime ? (typeof rawTime === 'number' ? `${rawTime} min` : rawTime) : '30 min';
+  let cookingTime = '30 min';
+  if (totalTime > 0 && !parsedRecipe.cooking_time) {
+    // Format total minutes to hours and minutes if needed, or just show mins
+    if (totalTime >= 60) {
+      const h = Math.floor(totalTime / 60);
+      const m = totalTime % 60;
+      cookingTime = m > 0 ? `${h}h ${m}m` : `${h}h`;
+    } else {
+      cookingTime = `${totalTime} min`;
+    }
+  } else if (rawTime) {
+    if (typeof rawTime === 'number') {
+      cookingTime = `${rawTime} min`;
+    } else {
+      const strRaw = String(rawTime).toLowerCase();
+      cookingTime = (strRaw.includes('min') || strRaw.includes('h')) ? rawTime : `${rawTime} min`;
+    }
+  }
   
   const rawCalories = parsedRecipe.nutrition?.calories || parsedRecipe.calories;
   const calories = rawCalories ? (typeof rawCalories === 'number' ? `${Math.round(rawCalories)} kcal` : rawCalories) : 'N/A';

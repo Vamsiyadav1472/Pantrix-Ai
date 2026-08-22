@@ -6,7 +6,7 @@ import { Theme } from '../theme';
 import { mealPlanService, settingsService } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Calendar as CalendarIcon, ChevronRight, Clock, Utensils, Sparkles, RefreshCw, CheckCircle2, Circle, Flame, Droplets, Wheat, X, Settings as SettingsIcon, Target, Globe, Ban, Sliders, Check } from 'lucide-react-native';
+import { Calendar as CalendarIcon, ChevronRight, Clock, Utensils, Sparkles, RefreshCw, CheckCircle2, Circle, Flame, Droplets, Wheat, X, Settings as SettingsIcon, Target, Globe, Ban, Sliders, Check, ThumbsUp, ThumbsDown, Plus } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 const MealPlannerScreen = ({
@@ -135,6 +135,72 @@ const MealPlannerScreen = ({
     } finally {
       setGenerating(false);
     }
+  };
+  
+  const handleRegenerateDay = async () => {
+    setGenerating(true);
+    try {
+      const response = await mealPlanService.generatePlan(userId, selectedDate);
+      if (response.data) {
+        fetchPlan();
+      }
+    } catch (error) {
+      Alert.alert("Generation Failed", "Could not regenerate meal plan.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleFeedback = async (meal, type) => {
+    try {
+      await mealPlanService.submitFeedback(userId, {
+        meal_name: meal.meal_name,
+        meal_type: meal.meal_type,
+        feedback_type: type
+      });
+      Alert.alert("Feedback Submitted", `You ${type} this meal.`);
+    } catch (error) {
+      Alert.alert("Error", "Could not submit feedback.");
+    }
+  };
+
+  const handleAddCustomMeal = () => {
+    // Basic implementation for adding a custom meal directly from UI
+    // In a full app, this would open a specific custom meal form
+    Alert.prompt(
+      "Add Custom Meal",
+      "Enter meal name and type (e.g., 'Oatmeal, Breakfast')",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Add", 
+          onPress: async (text) => {
+            if(!text) return;
+            const parts = text.split(',');
+            if(parts.length < 2) {
+               Alert.alert("Error", "Please format as 'Meal Name, Meal Type'");
+               return;
+            }
+            const mealName = parts[0].trim();
+            const mealType = parts[1].trim();
+            
+            try {
+              await mealPlanService.addCustomMeal({
+                user_id: userId,
+                date: selectedDate,
+                meal_type: mealType,
+                meal_name: mealName,
+                cooking_time: 15,
+                difficulty: 'Easy'
+              });
+              fetchPlan();
+            } catch(e) {
+              Alert.alert("Error", "Failed to add custom meal.");
+            }
+          }
+        }
+      ]
+    );
   };
   
   const toggleComplete = async item => {
@@ -341,6 +407,17 @@ const MealPlannerScreen = ({
                   </View>
                 </View>
 
+                <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20}}>
+                  <TouchableOpacity style={styles.actionBtnSecondary} onPress={handleRegenerateDay}>
+                    <RefreshCw size={14} color="#34d399" />
+                    <Text style={styles.actionBtnSecondaryText}>{t("MealPlannerScreen.Regenerate_Day", "Regenerate Day")}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.actionBtnSecondary} onPress={handleAddCustomMeal}>
+                    <Plus size={14} color="#3b82f6" />
+                    <Text style={[styles.actionBtnSecondaryText, {color: '#3b82f6'}]}>{t("MealPlannerScreen.Custom_Meal", "Custom Meal")}</Text>
+                  </TouchableOpacity>
+                </View>
+
                 {['Breakfast', 'Lunch', 'Snack', 'Dinner'].map(type => renderMealCard(type))}
               </>
             ) : (
@@ -433,6 +510,17 @@ const MealPlannerScreen = ({
                     <Text style={styles.modalMacroText}>{selectedItem.nutrition?.carbs || 0}{t("MealPlannerScreen.g_Carb")}</Text>
                     <Text style={styles.metaDot}>•</Text>
                     <Text style={styles.modalMacroText}>{selectedItem.nutrition?.fat || 0}{t("MealPlannerScreen.g_Fat")}</Text>
+                  </View>
+                  
+                  <View style={{flexDirection: 'row', justifyContent: 'center', gap: 20, marginBottom: 20}}>
+                    <TouchableOpacity style={styles.feedbackBtn} onPress={() => { handleFeedback(selectedItem, 'liked'); setSelectedItem(null); }}>
+                      <ThumbsUp size={20} color="#10b981" />
+                      <Text style={[styles.feedbackText, {color: '#10b981'}]}>Like</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.feedbackBtn} onPress={() => { handleFeedback(selectedItem, 'disliked'); handleReplace(selectedItem.meal_type); setSelectedItem(null); }}>
+                      <ThumbsDown size={20} color="#ef4444" />
+                      <Text style={[styles.feedbackText, {color: '#ef4444'}]}>Dislike</Text>
+                    </TouchableOpacity>
                   </View>
                   
                   <ScrollView style={styles.modalScroll}>
@@ -1168,6 +1256,37 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontFamily: Theme.typography.fontFamily.bodySemiBold
+  },
+  actionBtnSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(30, 41, 59, 0.75)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  actionBtnSecondaryText: {
+    fontSize: 13,
+    color: '#34d399',
+    fontFamily: Theme.typography.fontFamily.bodySemiBold,
+  },
+  feedbackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  feedbackText: {
+    fontSize: 14,
+    fontFamily: Theme.typography.fontFamily.bodySemiBold,
   }
 });
 

@@ -412,3 +412,31 @@ class FamilyMemberResponse(FamilyMemberBase):
 
     class Config:
         from_attributes = True
+
+# ==================== Meal Feedback Schemas ====================
+class MealFeedbackBase(BaseModel):
+    meal_name: str
+    meal_type: str
+    feedback_type: str
+    rating: Optional[int] = None
+
+class MealFeedbackCreate(MealFeedbackBase):
+    pass
+
+class MealFeedbackResponse(MealFeedbackBase):
+    id: int
+    user_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class CustomMealCreate(BaseModel):
+    user_id: int
+    date: str
+    meal_type: str
+    meal_name: str
+    cooking_time: Optional[int] = 15
+    difficulty: Optional[str] = "Easy"
+    ingredients: Optional[List[Dict[str, Any]]] = None
+    nutrition: Optional[Dict[str, Any]] = None

@@ -78,24 +78,7 @@ Return ONLY a strictly formatted JSON object: {{"name":"Exact Name","description
             status_msg = "success"
             
         except Exception as e:
-            error_str = str(e).lower()
-            if "429" in error_str or "quota" in error_str or "resource_exhausted" in error_str:
-                # 3. Fallback on 429 Quota Exceeded
-                recipe_data = {
-                    "name": "Smart Fallback Veggie Bowl",
-                    "description": "A quick and healthy bowl using available ingredients (AI limit reached).",
-                    "prep_time": 10,
-                    "cook_time": 15,
-                    "servings": 2,
-                    "calories": 350,
-                    "difficulty": "Easy",
-                    "ingredients": items_str,
-                    "steps": "1. Prepare all ingredients.\n2. Mix them in a bowl.\n3. Serve fresh.",
-                    "tags": cache_key
-                }
-                status_msg = "fallback"
-            else:
-                raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e))
 
         # 4. Save to PostgreSQL
         recipe_create = schemas.RecipeCreate(
